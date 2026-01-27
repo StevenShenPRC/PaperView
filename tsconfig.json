@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx", // 确保启用了 React JSX 支持
+    "strict": true, // 推荐开启严格模式
+    "esModuleInterop": true, // 确保模块互操作性
+    "skipLibCheck": true // 跳过库检查，避免第三方类型报错
+  }
+}
