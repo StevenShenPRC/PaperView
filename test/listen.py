@@ -66,13 +66,36 @@ HTML_TEMPLATE = '''
         h1 { color: #333; text-align: center; }
         .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .journal-info { background-color: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; word-wrap: break-word; vertical-align: top; }
-        th { background-color: #4CAF50; color: white; position: sticky; top: 0; }
-        tr:hover { background-color: #f5f5f5; }
-        .doi-link { color: #007bff; text-decoration: none; }
-        .doi-link:hover { text-decoration: underline; }
-        .abstract { white-space: pre-wrap; }
+        .paper-card { 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 5px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            word-wrap: break-word;
+        }
+        .paper-card:nth-child(even) { background-color: #f9f9f9; }
+        .paper-card:nth-child(odd) { background-color: white; }
+        .paper-title { 
+            font-size: 1.2em; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+            color: #2c5aa0; 
+        }
+        .paper-doi { 
+            margin-bottom: 10px; 
+        }
+        .doi-link { 
+            color: #007bff; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+        .doi-link:hover { 
+            text-decoration: underline; 
+        }
+        .paper-abstract { 
+            white-space: pre-wrap; 
+            line-height: 1.5;
+        }
         .refresh-btn { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
         .refresh-btn:hover { background-color: #0056b3; }
         select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; min-width: 300px; }
@@ -100,28 +123,25 @@ HTML_TEMPLATE = '''
             <p><strong>期刊卷期:</strong> {{ journal_info.issueVolume }}</p>
             <p><strong>出版日期:</strong> {{ journal_info.issueDate }}</p>
             <p><strong>网站来源:</strong> {{ journal_info.website }}</p>
-            <p><strong>共 {{ paper_count }} 篇论文</strong></p>
+            <p><strong>数据条数:</strong> {{ paper_count }} 篇论文</p>
         </div>
         {% endif %}
         
-        <table id="papers-table">
-            <thead>
-                <tr>
-                    <th style="width: 10%;">标题</th>
-                    <th style="width: 10%;">DOI</th>
-                    <th style="width: 80%;">摘要</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for paper in papers %}
-                <tr>
-                    <td>{{ paper.title }}</td>
-                    <td><a href="https://doi.org/{{ paper.doi }}" target="_blank" class="doi-link">{{ paper.doi }}</a></td>
-                    <td class="abstract">{{ paper.abstract }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="papers-container">
+            {% for paper in papers %}
+                <div class="paper-card">
+                    <div class="paper-title">{{ paper.title }}</div>
+                    <div class="paper-doi">
+                        <strong>DOI:</strong> 
+                        <a href="https://doi.org/{{ paper.doi }}" target="_blank" class="doi-link">{{ paper.doi }}</a>
+                    </div>
+                    <div class="paper-abstract">
+                        <div><strong>摘要:</strong></div>
+                        <div>{{ paper.abstract }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 
     <script>
