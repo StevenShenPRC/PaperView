@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperView - 论文管理系统</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>PaperView - 论文管理系统</h1>
+        
+        <div class="controls">
+            <label for="batch-select">选择数据批次: </label>
+            <select id="batch-select" onchange="changeBatch()">
+                <!-- Batches will be filled by JavaScript -->
+            </select>
+            <button class="refresh-btn" onclick="location.reload()">刷新数据</button>
+        </div>
+        
+        <div class="journal-info" id="journalInfo">
+            <h2 id="journalName"></h2>
+            <p><strong>期刊卷期:</strong> <span id="issueVolume"></span></p>
+            <p><strong>出版日期:</strong> <span id="issueDate"></span></p>
+            <p><strong>网站来源:</strong> <span id="website"></span></p>
+            <p><strong>共<span id="paperCount"></span> 篇论文</strong></p>
+        </div>
+        
+        <div class="papers-container" id="papersContainer">
+            <!-- Papers will be filled by JavaScript -->
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
