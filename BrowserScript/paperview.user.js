@@ -13,12 +13,26 @@
 // @connect      localhost
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     // --- 配置区 ---
-    const LOCAL_APP_API = "http://127.0.0.1:8080/sync"; // 占位符：桌面应用接口
-    const LOCAL_CHECK_API = "http://127.0.0.1:8080/health"; // 占位符：健康检查接口
+    // 默认端口
+    const DEFAULT_PORT = "8080";
+
+    // 获取保存的端口或使用默认值
+    function getPort() {
+        return localStorage.getItem('paperview_port') || DEFAULT_PORT;
+    }
+
+    function setPort(port) {
+        localStorage.setItem('paperview_port', port);
+    }
+
+    function getApiUrl(path) {
+        const port = getPort();
+        return `http://127.0.0.1:${port}${path}`;
+    }
 
     // 延迟函数，用于速率限制
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -189,13 +203,15 @@
             color: #393; 
         }
         #sync-panel select, 
+        #sync-panel input,
         #sync-panel button { 
             width: 100%; 
             margin-top: 8px; 
             padding: 6px; 
             cursor: pointer; 
             border-radius: 4px; 
-            border: 1px solid #ddd; 
+            border: 1px solid #ddd;
+            box-sizing: border-box; 
         }
         #sync-panel button { 
             background: #007396; 
@@ -209,6 +225,12 @@
         #sync-panel button:disabled { 
             background: #ccc; 
         }
+        #sync-panel label {
+            font-size: 12px;
+            color: #666;
+            display: block;
+            margin-top: 8px;
+        }
     `);
 
     const panel = document.createElement('div');
@@ -216,6 +238,10 @@
     panel.innerHTML = `
         <h3>学术助手同步</h3>
         <div id="app-status" class="status-bar status-offline">应用状态: 未检测</div>
+        
+        <label for="app-port">应用端口:</label>
+        <input type="text" id="app-port" value="${getPort()}" placeholder="8080">
+        
         <select id="site-select"></select>
         <button id="btn-check">检测应用</button>
         <button id="btn-sync" disabled>立即同步数据</button>
@@ -228,6 +254,12 @@
     const statusDiv = document.getElementById('app-status');
     const logDiv = document.getElementById('msg-log');
     const btnSync = document.getElementById('btn-sync');
+    const portInput = document.getElementById('app-port');
+
+    // 监听端口变化并保存
+    portInput.addEventListener('change', (e) => {
+        setPort(e.target.value);
+    });
 
     // 填充下拉框并自动匹配
     let currentAdapterKey = "";
@@ -247,11 +279,14 @@
     // 1. 检测应用是否在线
     document.getElementById('btn-check').onclick = () => {
         logDiv.innerText = "正在检测...";
+        // 获取当前配置的端口URL
+        const url = getApiUrl('/health');
+
         GM_xmlhttpRequest({
             method: "GET",
-            url: LOCAL_CHECK_API,
+            url: url,
             timeout: 2000,
-            onload: function(res) {
+            onload: function (res) {
                 if (res.status === 200) {
                     statusDiv.innerText = "应用状态: 在线";
                     statusDiv.className = "status-bar status-online";
@@ -272,6 +307,7 @@
         btnSync.disabled = true;
         logDiv.innerText = "无法连接到桌面应用";
     }
+
 
     // 2. 同步数据逻辑
     btnSync.onclick = async () => {
@@ -301,12 +337,13 @@
 
             logDiv.innerText = `同步中 (${payload.articles.length} 条)...`;
 
+            const url = getApiUrl('/sync');
             GM_xmlhttpRequest({
                 method: "POST",
-                url: LOCAL_APP_API,
-                header: { "Content-Type": "application/json" },
+                url: url,
+                headers: { "Content-Type": "application/json" },
                 data: JSON.stringify(payload),
-                onload: function(res) {
+                onload: function (res) {
                     if (res.status === 200) {
                         logDiv.style.color = "#393";
                         logDiv.innerText = "✅ 同步成功！";
@@ -322,6 +359,7 @@
                     console.error("[Springer] 推送失败，检查 API。");
                 }
             });
+
         }, 2000); // 等待 2 秒以确保 Abstract 内容加载完成
     };
 
