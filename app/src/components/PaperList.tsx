@@ -65,7 +65,7 @@ const PaperList: React.FC<PaperListProps> = ({ papers, onUpdateMetadata, onTrans
                                 </Typography>
 
                                 {paper.abstract_cn && (
-                                    <Box sx={{ bgcolor: '#e3f2fd', p: 1, borderRadius: 1, mt: 1 }}>
+                                    <Box sx={{ bgcolor: 'action.selected', p: 1, borderRadius: 1, mt: 1 }}>
                                         <Typography variant="body2" color="text.primary">
                                             {paper.abstract_cn}
                                         </Typography>

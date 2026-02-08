@@ -143,21 +143,17 @@ function App() {
     }
   };
 
-  const handleTranslate = async (_paper: Paper) => {
-    // Disabled for now as per user request
-    alert("Translation feature is coming soon!");
-    /*
+  const handleTranslate = async (paper: Paper) => {
     try {
-      setLoading(true);
+      // Don't set global loading to true to avoid full list refresh if not needed, 
+      // but here we might want to show some indicator on the card.
+      // For now, let's just let it be async update.
       const updatedPaper = await invoke<Paper>('translate_paper', { id: paper.id });
       setPapers(prev => prev.map(p => p.id === updatedPaper.id ? updatedPaper : p));
     } catch (error) {
       console.error('Failed to translate:', error);
       alert('Failed to translate: ' + error);
-    } finally {
-      setLoading(false);
     }
-    */
   };
 
   /*

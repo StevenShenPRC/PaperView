@@ -1,22 +1,33 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AppConfig {
-    pub server_port: u16,
-    pub openai_api_key: Option<String>,
-    pub openai_api_endpoint: Option<String>,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiProvider {
+    pub name: String,
+    pub base_url: String,
+    pub api_key: String,
+    pub models: Vec<String>,
+    pub default_model: Option<String>,
+    pub additional_headers: Option<HashMap<String, String>>,
 }
 
-pub fn load_config(_app_config_dir: PathBuf) -> AppConfig {
-    // Default config
-    let default = AppConfig {
-        server_port: 8080,
-        openai_api_key: None,
-        openai_api_endpoint: None,
-    };
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppSettings {
+    pub proxy_mode: String, // "none", "system", "custom"
+    pub proxy_url: Option<String>,
+    pub ai_providers: Vec<AiProvider>,
+    pub active_ai_provider: Option<String>,
+    pub theme_mode: String, // "light", "dark", "system"
+}
 
-    // Attempt to load from file
-    // ...
-    default
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            proxy_mode: "system".to_string(),
+            proxy_url: None,
+            ai_providers: vec![],
+            active_ai_provider: None,
+            theme_mode: "system".to_string(),
+        }
+    }
 }

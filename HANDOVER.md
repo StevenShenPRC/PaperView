@@ -24,23 +24,48 @@ PaperView 是一个论文同步与管理系统，允许用户从浏览器捕捉�
     -   **主题系统**: 完整的亮色/暗色/跟随系统模式适配，包括自定义滚动条。
     -   **国际化**: 支持中英文切换 (`react-i18next`)。
 5.  **实时性**: 后端通过 Tauri Event 处理 `data-updated` 和 `paper-updated` 事件，前端实时响应。
+6.  **AI & 侧边栏增强 (最新进展)**:
+    -   **侧边栏交互**: 
+        -   支持拖拽调整宽度 (Min: 300px, Max: 800px)。
+        -   支持折叠/展开，折叠后显示 Mini 图标栏。
+    -   **聊天历史**: 
+        -   实现历史记录列表，支持删除与切换。
+        -   时间戳精确到分钟。
+    -   **高级复制**: 
+        -   消息气泡增加 "Sticky" 复制按钮，长消息滚动不消失。
+        -   右键菜单支持：复制文本、复制 Markdown、设置默认格式。
+    -   **设置增强**: 
+        -   完整支持 OpenAI/DeepSeek/Ollama 等多供应商配置。
+        -   支持自定义 HTTP Header (用于特殊 API 验证)。
+        -   支持网络代理 (System/Custom Proxy) 切换。
 
 ## 关键文件说明
 
 -   `src-tauri/src/server.rs`: 处理浏览器请求的核心逻辑。
 -   `src-tauri/src/db.rs`: 数据库操作与元数据更新逻辑。
+-   `src-tauri/src/lib/ai.rs`: AI 并在 `network.rs` 中统一处理 HTTP 代理。
 -   `src/theme.tsx`: 创建自适应主题及滚动条样式的函数。
 -   `src/App.tsx`: 状态管理、主题控制及主布局。
--   `src/components/PaperList.tsx`: 核心展示列表（含虚拟滚动）。
+-   `src/components/RightSidebar.tsx`: **(重点)** AI 聊天核心组件，包含 Resize/Collapse/Copy 及其状态管理逻辑。
+-   `src/components/AiSettings.tsx`: AI 供应商与模型配置界面。
 
-## 后续工作建议
+## 后续工作建议 (Next Steps)
 
-1.  **AI 翻译**: 目前界面上有“翻译”按钮但仅为占位符。后端需要集成 OpenAI 兼容接口实现摘要翻译。
-2.  **AI 助手**: 右侧边栏 UI 已就绪，但尚未连接到实际的后端对话逻辑。
-3.  **设置持久化**: 目前主题和设置存储在内存中，刷新会重置，建议引入 `tauri-plugin-store` 或使用 localStorage。
-4.  **自动化同步**: 考虑支持自动触发元数据抓取，而不是手动点击更新。
+1.  **验证与测试**:
+    -   即便代码已修复，建议再次全流程验证：添加新供应商 -> 聊天 -> 复制 -> 历史记录切换。
+    -   测试 Latex 公式在不同 Markdown 结构下的渲染（如列表中、表格中）。
+2.  **UI 细节打磨**:
+    -   历史记录的时间显示格式 (目前已精确到分钟，可考虑 "刚刚", "1小时前" 等相对时间)。
+    -   侧边栏折叠时的动画平滑度。
+3.  **功能完善**:
+    -   目前 AI 翻译功能已连接后端，但需确保 Prompt 调优以获得更好的翻译质量。
+    -   考虑增加 "停止生成" (Stop Generation) 按钮。
+4.  **已知问题 (Potential Issues)**:
+    -   曾出现 `STATUS_CONTROL_C_EXIT` 错误，若后端无故退出请检查日志。
+    -   确保 `tauri-plugin-store` 的持久化文件没有损坏 (可通过重置设置解决)。
 
 ## 注意事项
 
 -   开发环境 Vite 配置禁用了 `fs.strict` 以兼容 OneDrive 等路径结构。
 -   数据库文件默认位于 `src-tauri/papers.db`。
+-   设置文件存储于 `.chat_history`, `.settings` 等 store 文件中。

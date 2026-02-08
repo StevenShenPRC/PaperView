@@ -1,8 +1,10 @@
-use reqwest::Client;
 use serde_json::Value;
+use crate::network;
 
-pub async fn fetch_doi_metadata(doi: &str) -> Result<Value, String> {
-    let client = Client::new();
+pub async fn fetch_doi_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
+    let client = network::create_client_with_config(proxy_mode, proxy_url)
+        .map_err(|e| e.to_string())?;
+    
     // Reverting to citation.doi.org as per user request to match browser script logic
     let url = format!("https://citation.doi.org/metadata?doi={}", doi);
     

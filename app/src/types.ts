@@ -19,3 +19,20 @@ export interface Batch {
     issueDate: string;
     latest_time: string;
 }
+
+export interface AiProvider {
+    name: string;
+    base_url: string;
+    api_key: string;
+    models: string[];
+    default_model?: string;
+    additional_headers?: Record<string, string>;
+}
+
+export interface AppSettings {
+    proxy_mode: 'none' | 'system' | 'custom';
+    proxy_url?: string;
+    ai_providers: AiProvider[];
+    active_ai_provider?: string;
+    theme_mode: 'light' | 'dark' | 'system';
+}
