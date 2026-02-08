@@ -1,14 +1,14 @@
 {
-  "name": "app",
+  "name": "paperview",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1-alpha.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "i18n:extract": "i18next"
+    "i18n:extract": "i18next \"src/**/*.{ts,tsx}\" --config i18next-parser.config.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -27,12 +27,14 @@
     "react-markdown": "^10.1.0",
     "react-virtuoso": "^4.18.1",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "remove-markdown": "^0.6.3"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@types/remove-markdown": "^0.3.4",
     "@vitejs/plugin-react": "^4.6.0",
     "i18next-parser": "^9.0.2",
     "typescript": "~5.8.3",

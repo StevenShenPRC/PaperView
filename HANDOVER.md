@@ -38,6 +38,12 @@ PaperView 是一个论文同步与管理系统，允许用户从浏览器捕捉�
         -   完整支持 OpenAI/DeepSeek/Ollama 等多供应商配置。
         -   支持自定义 HTTP Header (用于特殊 API 验证)。
         -   支持网络代理 (System/Custom Proxy) 切换。
+7.  **元数据增强 (Fallback & UI)**:
+    -   **多数据源**: 实现了 DOI -> CrossRef -> Semantic Scholar -> Springer Crawler 的多级回退机制。
+    -   **爬虫增强**: 针对 Springer 实现了直接网页抓取，包含 Request Header 伪装。
+    -   **风控处理**: 
+        -   后端实现 1s/10m/100h 三级速率限制。
+        -   前端区分普通错误与风控错误，通过模态对话框 (Dialog) 提示用户并在界面显示加载动画。
 
 ## 关键文件说明
 
@@ -62,7 +68,7 @@ PaperView 是一个论文同步与管理系统，允许用户从浏览器捕捉�
     -   考虑增加 "停止生成" (Stop Generation) 按钮。
 4.  **已知问题 (Potential Issues)**:
     -   曾出现 `STATUS_CONTROL_C_EXIT` 错误，若后端无故退出请检查日志。
-    -   确保 `tauri-plugin-store` 的持久化文件没有损坏 (可通过重置设置解决)。
+    -   **i18n 提取**: `package.json` 中已更新 `i18n:extract` 脚本，显式指定 `--config i18next-parser.config.cjs`。配置已重命名为 `.cjs` 以兼容 ES Module 项目。
 
 ## 注意事项
 

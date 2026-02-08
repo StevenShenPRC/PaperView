@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Box, CssBaseline, ThemeProvider, CircularProgress, Typography, useMediaQuery } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, CircularProgress, Typography, useMediaQuery, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { createAppTheme } from './theme';
 import Sidebar from './components/Sidebar';
 import RightSidebar from './components/RightSidebar';
@@ -129,15 +129,41 @@ function App() {
     }
   };
 
+  // Snackbar State
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
+
+  // Rate Limit Dialog State
+  const [rateLimitOpen, setRateLimitOpen] = useState(false);
+  const [rateLimitMessage, setRateLimitMessage] = useState('');
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
+  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
   const handleUpdateMetadata = async (paper: Paper) => {
     try {
       // Don't set global loading to true to avoid full list refresh
       // setLoading(true); 
       const updatedPaper = await invoke<Paper>('update_metadata', { id: paper.id, doi: paper.doi });
       setPapers(prev => prev.map(p => p.id === updatedPaper.id ? updatedPaper : p));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update metadata:', error);
-      alert('Failed to update metadata: ' + error);
+      const errMsg = String(error);
+      if (errMsg.includes("Publisher policy limit") || errMsg.includes("risk control")) {
+        setRateLimitMessage(t('app.rate_limit_error') || `Updates limited by publisher: ${errMsg}`);
+        setRateLimitOpen(true);
+      } else {
+        showSnackbar(`Failed to update: ${errMsg}`, 'error');
+      }
+      throw error; // Propagate to PaperList to stop spinner
     } finally {
       // setLoading(false);
     }
@@ -221,6 +247,37 @@ function App() {
         mode={mode}
         onModeChange={setMode}
       />
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={rateLimitOpen}
+        onClose={() => setRateLimitOpen(false)}
+        aria-labelledby="rate-limit-dialog-title"
+        aria-describedby="rate-limit-dialog-description"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="rate-limit-dialog-title" color="error">
+          {t('app.warning') || "Warning"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="rate-limit-dialog-description" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+            {rateLimitMessage}
+          </DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>
+            {t('app.rate_limit_hint') || "Please wait a moment before trying again to avoid being blocked by the publisher."}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRateLimitOpen(false)} color="primary" variant="contained" autoFocus>
+            {t('app.confirm') || "I Understand"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }

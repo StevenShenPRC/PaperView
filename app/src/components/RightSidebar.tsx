@@ -13,13 +13,18 @@ import CopyIcon from '@mui/icons-material/ContentCopy';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // For menu maybe
 import MoreVertIcon from '@mui/icons-material/MoreVert'; // context menu
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
+// import rehypeKatex from 'rehype-katex'; // Removed in favor of custom component
+// import 'katex/dist/katex.min.css'; // Removed, using CDN in index.html for font fix
+import InteractiveMath from './InteractiveMath';
+import CodeBlock from './CodeBlock';
+// @ts-ignore
+import removeMd from 'remove-markdown';
 import store from '../store';
 // import { v4 as uuidv4 } from 'uuid'; 
 
@@ -118,31 +123,79 @@ const RightSidebar: React.FC = () => {
 
     // --- Session Management ---
 
-    // Load sessions on mount
+    // Load sessions and provider info on mount
     useEffect(() => {
-        const loadSessions = async () => {
+        const initializeChat = async () => {
             try {
+                // 1. Load Settings (Provider & Default Model)
+                let defaultModelToUse = 'gpt-3.5-turbo';
+                try {
+                    const active = await store.get<string>('active_ai_provider');
+                    const providers = await store.get<any[]>('ai_providers');
+
+                    setActiveProviderName(active || null);
+
+                    if (active && providers) {
+                        const provider = providers.find((p: any) => p.name === active);
+                        if (provider) {
+                            let models: string[] = provider.models || [];
+                            setAvailableModels(models);
+
+                            // Determine default model
+                            if (provider.default_model) {
+                                defaultModelToUse = provider.default_model;
+                            } else if (models.length > 0) {
+                                defaultModelToUse = models[0];
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to load provider info", err);
+                }
+
+                // Set the selected model state
+                setSelectedModel(defaultModelToUse);
+
+                // 2. Load History
                 const stored = await store.get<ChatSession[]>('chat_history');
+                let historySessions: ChatSession[] = [];
                 if (stored && Array.isArray(stored)) {
                     setSessions(stored);
-                    // Load last session if available
-                    if (stored.length > 0) {
-                        const last = stored[0];
-                        setCurrentSessionId(last.id);
-                        setMessages(last.messages);
-                        if (last.model) setSelectedModel(last.model);
-                    } else {
-                        startNewChat();
-                    }
-                } else {
-                    startNewChat();
+                    historySessions = stored;
                 }
+
+                // 3. Check for existing empty "New Chat" or Start New
+                // If the latest session is empty, reuse it instead of creating a new one
+                let reused = false;
+                if (historySessions.length > 0) {
+                    const latest = historySessions[0];
+                    if (latest.messages.length === 0) {
+                        setCurrentSessionId(latest.id);
+                        setMessages([]); // It's empty anyway
+                        // Update the model to the current default if we reuse it
+                        // or keep it? explicit request was "load default model... into this *new* chat".
+                        // If we reuse, it's effectively the "new" chat. 
+                        // Let's set the selected model to the default one we determined above.
+                        setSelectedModel(defaultModelToUse);
+
+                        // We also need to update the session's model in the state/store if it differs?
+                        // For now just setting selectedModel allows the user to send with that model.
+                        // The session object in 'sessions' will be updated when the user sends a message.
+                        reused = true;
+                    }
+                }
+
+                if (!reused) {
+                    startNewChat(defaultModelToUse);
+                }
+
             } catch (e) {
-                console.error("Failed to load history", e);
-                startNewChat();
+                console.error("Failed to initialize chat", e);
+                startNewChat('gpt-3.5-turbo');
             }
         };
-        loadSessions();
+
+        initializeChat();
     }, []);
 
     // Save sessions whenever they change
@@ -171,18 +224,38 @@ const RightSidebar: React.FC = () => {
         }));
     }, [messages]);
 
-    const startNewChat = () => {
+    const startNewChat = (modelOverride?: string) => {
+        // Optimization: If the latest session is empty, reuse it
+        if (sessions.length > 0 && sessions[0].messages.length === 0) {
+            const reusedSession = { ...sessions[0] };
+            reusedSession.createdAt = Date.now(); // Update timestamp
+
+            const modelToUse = modelOverride || selectedModel || 'gpt-3.5-turbo';
+            reusedSession.model = modelToUse;
+
+            // Update sessions list with modified first session
+            setSessions(prev => [reusedSession, ...prev.slice(1)]);
+            setCurrentSessionId(reusedSession.id);
+            setMessages([]);
+
+            if (modelOverride) setSelectedModel(modelOverride);
+            return;
+        }
+
         const newId = crypto.randomUUID();
+        const modelToUse = modelOverride || selectedModel || 'gpt-3.5-turbo';
+
         const newSession: ChatSession = {
             id: newId,
-            title: 'New Chat',
+            title: t('app.new_chat'),
             messages: [],
             createdAt: Date.now(),
-            model: selectedModel || 'gpt-3.5-turbo'
+            model: modelToUse
         };
         setSessions(prev => [newSession, ...prev]);
         setCurrentSessionId(newId);
         setMessages([]);
+        if (modelOverride) setSelectedModel(modelOverride);
     };
 
     const switchSession = (session: ChatSession) => {
@@ -215,44 +288,17 @@ const RightSidebar: React.FC = () => {
     };
 
 
-    // Load active provider and models on mount or when sidebar opens
+    // Unified initialization above replaces this individual effect
+    // keeping empty or removing it. Removing it to avoid double loading.
+    // However, listen to settings change might be needed later.
+    /*
     useEffect(() => {
         const loadProviderInfo = async () => {
-            try {
-                const active = await store.get<string>('active_ai_provider');
-                const providers = await store.get<any[]>('ai_providers');
-
-                setActiveProviderName(active || null);
-
-                if (active && providers) {
-                    const provider = providers.find((p: any) => p.name === active);
-                    if (provider) {
-                        let models: string[] = provider.models || [];
-                        setAvailableModels(models);
-
-                        // If selectedModel is not set or not in valid list (optional check), reset it
-                        // Prioritize default_model -> first model -> fallback
-                        if (!selectedModel) {
-                            if (provider.default_model) {
-                                setSelectedModel(provider.default_model);
-                            } else if (models.length > 0) {
-                                setSelectedModel(models[0]);
-                            } else {
-                                setSelectedModel('gpt-3.5-turbo');
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to load provider info", err);
-            }
+             // ... moved to init ...
         };
-
         loadProviderInfo();
-
-        // Listen for settings changes if needed, but for now just load once or on focus could be good.
-        // Simple polling or event listener for settings-changed would be better but let's stick to mount for now.
-    }, []); // Empty deps means run once on mount. 
+    }, []); 
+    */
 
     useEffect(() => {
         let unlistenHandlers: UnlistenFn[] = [];
@@ -385,7 +431,13 @@ const RightSidebar: React.FC = () => {
         let textToCopy = content;
         // If markdown requested, content is already markdown. 
         if (format === 'text') {
-            // Placeholder: textToCopy = content.replace(/[#*`]/g, ''); 
+            try {
+                textToCopy = removeMd(content);
+            } catch (e) {
+                console.error("Failed to strip markdown", e);
+                // Fallback to simple replace
+                textToCopy = content.replace(/[#*`]/g, '');
+            }
         }
 
         navigator.clipboard.writeText(textToCopy);
@@ -434,26 +486,29 @@ const RightSidebar: React.FC = () => {
                 />
             )}
 
-            <Box sx={{ p: collapsed ? 1 : 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Padding reduced from 2 to 1 (or 0.5) as requested */}
+            <Box sx={{ p: collapsed ? 0.5 : 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
                 <Box sx={{ display: 'flex', justifyContent: collapsed ? 'center' : 'space-between', alignItems: 'center', mb: 1 }}>
                     {!collapsed ? (
                         <>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <IconButton onClick={(e) => setHistoryAnchorEl(e.currentTarget)} size="small" sx={{ mr: 1 }}>
-                                    <HistoryIcon />
-                                </IconButton>
+                                <Tooltip title={t('app.history')}>
+                                    <IconButton onClick={(e) => setHistoryAnchorEl(e.currentTarget)} size="small" sx={{ mr: 1 }}>
+                                        <HistoryIcon />
+                                    </IconButton>
+                                </Tooltip>
                                 <Typography variant="h6" noWrap>
                                     {t('app.ai_assistant')}
                                 </Typography>
                             </Box>
                             <Box>
-                                <Tooltip title="New Chat">
-                                    <IconButton onClick={startNewChat} size="small">
+                                <Tooltip title={t('app.new_chat')}>
+                                    <IconButton onClick={() => startNewChat()} size="small">
                                         <AddIcon />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Collapse">
+                                <Tooltip title={t('app.collapse')}>
                                     <IconButton onClick={() => setCollapsed(true)} size="small">
                                         <ChevronRightIcon />
                                     </IconButton>
@@ -461,9 +516,9 @@ const RightSidebar: React.FC = () => {
                             </Box>
                         </>
                     ) : (
-                        <Tooltip title="Expand">
+                        <Tooltip title={t('app.expand')}>
                             <IconButton onClick={() => setCollapsed(false)}>
-                                <HistoryIcon />
+                                <AutoAwesomeIcon />
                             </IconButton>
                         </Tooltip>
                     )}
@@ -472,7 +527,7 @@ const RightSidebar: React.FC = () => {
                 {/* Collapsed View: Show minimal/nothing or just expand button above */}
                 {collapsed ? (
                     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 2 }}>
-                        <IconButton onClick={startNewChat}>
+                        <IconButton onClick={() => startNewChat()}>
                             <AddIcon />
                         </IconButton>
                     </Box>
@@ -494,9 +549,11 @@ const RightSidebar: React.FC = () => {
                                         key={s.id}
                                         disablePadding
                                         secondaryAction={
-                                            <IconButton edge="end" aria-label="delete" onClick={(e) => deleteSession(e, s.id)} size="small">
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            <Tooltip title={t('app.delete')}>
+                                                <IconButton edge="end" aria-label="delete" onClick={(e) => deleteSession(e, s.id)} size="small">
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                         }
                                     >
                                         <ListItemButton selected={s.id === currentSessionId} onClick={() => switchSession(s)}>
@@ -509,32 +566,37 @@ const RightSidebar: React.FC = () => {
                                         </ListItemButton>
                                     </ListItem>
                                 ))}
-                                {sessions.length === 0 && <ListItem><ListItemText primary="No history" /></ListItem>}
+                                {sessions.length === 0 && <ListItem><ListItemText primary={t('app.no_history') || "No history"} /></ListItem>}
                             </List>
                         </Popover>
 
                         {/* Model Selector */}
                         {activeProviderName && (
-                            <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-                                <Select
-                                    value={selectedModel}
-                                    onChange={(e) => updateCurrentSessionModel(e.target.value)}
-                                    displayEmpty
-                                    renderValue={(selected) => {
-                                        if (selected.length === 0) {
-                                            return <em>Select Model</em>;
-                                        }
-                                        return selected;
-                                    }}
-                                >
-                                    <MenuItem disabled value="">
-                                        <em>Select Model</em>
-                                    </MenuItem>
-                                    {availableModels.map((m) => (
-                                        <MenuItem key={m} value={m}>{m}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
+                                    {t('settings.models') || "Model"}:
+                                </Typography>
+                                <FormControl fullWidth size="small">
+                                    <Select
+                                        value={selectedModel}
+                                        onChange={(e) => updateCurrentSessionModel(e.target.value)}
+                                        displayEmpty
+                                        renderValue={(selected) => {
+                                            if (selected.length === 0) {
+                                                return <em>{t('app.select_model') || "Select Model"}</em>;
+                                            }
+                                            return selected;
+                                        }}
+                                    >
+                                        <MenuItem disabled value="">
+                                            <em>{t('app.select_model') || "Select Model"}</em>
+                                        </MenuItem>
+                                        {availableModels.map((m) => (
+                                            <MenuItem key={m} value={m}>{m}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Box>
                         )}
 
                         <Divider sx={{ mb: 2 }} />
@@ -555,7 +617,8 @@ const RightSidebar: React.FC = () => {
                             bgcolor: 'action.hover',
                             mb: 2,
                             borderRadius: 1,
-                            p: 2,
+                            px: 1, // Reduced padding
+                            py: 2,
                             overflowY: 'auto',
                             display: 'flex',
                             flexDirection: 'column',
@@ -567,82 +630,147 @@ const RightSidebar: React.FC = () => {
                                 </Typography>
                             )}
 
-                            {messages.map((msg, index) => (
-                                <Box key={index}
-                                    className={index === messages.length - 1 && msg.role === 'assistant' ? 'message-fade-in' : ''}
-                                    sx={{
-                                        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                        maxWidth: '90%',
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        position: 'relative' // Needed?
-                                    }}>
-                                    {/* Sticky Copy Button Wrapper */}
-                                    <Box sx={{
-                                        position: 'sticky',
-                                        top: 0,
-                                        height: 0, // Don't take up vertical space
-                                        zIndex: 10,
-                                        order: msg.role === 'user' ? 0 : 1, // User: button left, Assistant: button right
-                                        // Make button appear outside bubbles
-                                        transform: msg.role === 'user' ? 'translateX(-32px)' : 'translateX(calc(100% + 8px))',
-                                        visibility: 'visible', // Always visible or hover?
-                                        // To stick properly, container needs height. message bubble gives height.
-                                    }}>
-                                        <Box sx={{ pt: 1 }}> {/* Small padding from top */}
-                                            <Tooltip title="Copy (Right-click for options)">
-                                                <IconButton
-                                                    size="small"
-                                                    sx={{
-                                                        bgcolor: 'background.paper',
-                                                        boxShadow: 1,
-                                                        opacity: 0.1,
-                                                        '&:hover': { opacity: 1 },
-                                                        transition: 'opacity 0.2s'
-                                                    }}
-                                                    onClick={(e) => handleCopyClick(e, msg.content)}
-                                                    onContextMenu={(e) => handleCopyContextMenu(e, msg.content)}
-                                                >
-                                                    <CopyIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </Box>
+                            {messages.map((msg, index) => {
+                                const isUser = msg.role === 'user';
+                                return (
+                                    <Box key={index}
+                                        className={index === messages.length - 1 && !isUser ? 'message-fade-in' : ''}
+                                        sx={{
+                                            alignSelf: isUser ? 'flex-end' : 'stretch', // Stretch for AI
+                                            maxWidth: isUser ? '90%' : '100%', // Full width for AI
+                                            width: isUser ? 'auto' : '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column', // Stack divider/content
+                                            position: 'relative',
+                                            my: isUser ? 1 : 0
+                                        }}>
 
-                                    <Box sx={{
-                                        bgcolor: msg.role === 'user' ? 'primary.light' : 'background.paper',
-                                        color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        boxShadow: 1,
-                                        order: msg.role === 'user' ? 1 : 0
-                                    }}>
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkMath]}
-                                            rehypePlugins={[rehypeKatex]}
-                                            components={{
-                                                p: ({ node, ...props }) => <Typography variant="body2" sx={{ wordBreak: "break-word" }} {...props} />,
-                                                code: ({ node, className, children, ...props }: any) => {
-                                                    const match = /language-(\w+)/.exec(className || '')
-                                                    return !props.inline && match ? (
-                                                        <Box component="div" sx={{ overflowX: 'auto', bgcolor: '#333', color: '#fff', p: 1, borderRadius: 1, my: 1 }}>
-                                                            <code className={className} {...props}>
+                                        {/* Top Divider for Assistant */}
+                                        {!isUser && (
+                                            <Divider sx={{ my: 1, borderColor: 'divider', opacity: 1 }} />
+                                        )}
+
+
+                                        <Box sx={{
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            width: '100%', // Ensure row takes full width
+                                            position: 'relative'
+                                        }}>
+                                            {/* Sticky Copy Button Wrapper */}
+                                            <Box sx={{
+                                                position: 'sticky',
+                                                top: 0,
+                                                height: 0,
+                                                zIndex: 10,
+                                                order: isUser ? 0 : 1,
+                                                // Adjusted transform logic
+                                                transform: isUser
+                                                    ? 'translateX(-32px)'
+                                                    : 'translateX(0)', // For AI, we might want it inside or right aligned
+                                                right: isUser ? 'auto' : 0, // Align right for AI inside the relative container
+                                                left: isUser ? 0 : 'auto',
+                                                display: 'flex',
+                                                justifyContent: 'flex-end',
+                                                width: isUser ? 'auto' : 0, // CRITICAL FIX: 0 width for AI to prevent flex split
+                                                flexShrink: 0, // Prevent shrinking
+                                                pointerEvents: 'none', // Don't block clicks on text
+                                                overflow: 'visible' // Ensure button is visible even with 0 width
+                                            }}>
+                                                {/* For AI: Float button to right? */}
+                                                <Box sx={{
+                                                    pt: 1,
+                                                    ...(!isUser && {
+                                                        position: 'absolute',
+                                                        right: 0,
+                                                        top: 0
+                                                    }),
+                                                    pointerEvents: 'auto' // Re-enable clicks
+                                                }}>
+                                                    <Tooltip title={t('app.copy')}>
+                                                        <IconButton
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: isUser ? 'primary.light' : 'background.paper', // Match bubble bg roughly
+                                                                color: isUser ? 'primary.contrastText' : 'text.primary',
+                                                                boxShadow: 1,
+                                                                opacity: 0.6, // Higher base opacity
+                                                                '&:hover': { opacity: 1 },
+                                                                transition: 'opacity 0.2s'
+                                                            }}
+                                                            onClick={(e) => handleCopyClick(e, msg.content)}
+                                                            onContextMenu={(e) => handleCopyContextMenu(e, msg.content)}
+                                                        >
+                                                            <CopyIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Message Content */}
+                                            <Box sx={{
+                                                bgcolor: isUser ? 'primary.light' : 'transparent', // No bg for AI
+                                                color: isUser ? 'primary.contrastText' : 'text.primary',
+                                                p: isUser ? 1.5 : 0.5, // Less padding for AI text
+                                                borderRadius: isUser ? 2 : 0,
+                                                boxShadow: isUser ? 1 : 0,
+                                                order: isUser ? 1 : 0,
+                                                width: isUser ? 'auto' : '100%', // Full width for AI, auto for user
+                                                maxWidth: isUser ? '90%' : '100%', // User constrained
+                                                flexGrow: isUser ? 0 : 1, // AI grows to fill
+                                                overflow: 'hidden' // Ensure code blocks don't overflow
+                                            }}>
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkMath]}
+                                                    remarkRehypeOptions={{
+                                                        handlers: {
+                                                            math: (_state, node) => {
+                                                                return {
+                                                                    type: 'element',
+                                                                    tagName: 'interactive-math',
+                                                                    properties: {
+                                                                        latex: node.value,
+                                                                        block: true
+                                                                    },
+                                                                    children: []
+                                                                };
+                                                            },
+                                                            inlineMath: (_state, node) => {
+                                                                return {
+                                                                    type: 'element',
+                                                                    tagName: 'interactive-math',
+                                                                    properties: {
+                                                                        latex: node.value,
+                                                                        block: false
+                                                                    },
+                                                                    children: []
+                                                                };
+                                                            }
+                                                        }
+                                                    }}
+                                                    components={{
+                                                        // @ts-ignore
+                                                        'interactive-math': ({ node, ...props }: any) => <InteractiveMath latex={props.latex} block={props.block} />,
+                                                        p: ({ node, ...props }) => <Typography variant="body2" sx={{ wordBreak: "break-word" }} {...props} />,
+                                                        code: ({ node, className, children, ...props }: any) => (
+                                                            <CodeBlock className={className} inline={props.inline} {...props}>
                                                                 {children}
-                                                            </code>
-                                                        </Box>
-                                                    ) : (
-                                                        <code className={className} {...props} style={{ backgroundColor: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }}>
-                                                            {children}
-                                                        </code>
-                                                    )
-                                                }
-                                            }}
-                                        >
-                                            {msg.content}
-                                        </ReactMarkdown>
+                                                            </CodeBlock>
+                                                        )
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                            </Box>
+                                        </Box>
+
+                                        {!isUser && (
+                                            <Divider sx={{ my: 1, borderColor: 'divider', opacity: 1 }} />
+                                        )}
+
                                     </Box>
-                                </Box>
-                            ))}
+                                );
+                            })}
                             <div ref={messagesEndRef} />
                         </Box>
 
@@ -652,10 +780,10 @@ const RightSidebar: React.FC = () => {
                             open={Boolean(copyAnchorEl)}
                             onClose={() => setCopyAnchorEl(null)}
                         >
-                            <MenuItem onClick={() => handleCopyAction(selectedCopyContent, 'text')}>Copy Text</MenuItem>
-                            <MenuItem onClick={() => handleCopyAction(selectedCopyContent, 'markdown')}>Copy Markdown</MenuItem>
+                            <MenuItem onClick={() => handleCopyAction(selectedCopyContent, 'text')}>{t('app.copy_text') || "Copy Text"}</MenuItem>
+                            <MenuItem onClick={() => handleCopyAction(selectedCopyContent, 'markdown')}>{t('app.copy_markdown') || "Copy Markdown"}</MenuItem>
                             <Divider />
-                            <MenuItem onClick={(e) => setCopyFormatAnchorEl(e.currentTarget)}>Set Default Format</MenuItem>
+                            <MenuItem onClick={(e) => setCopyFormatAnchorEl(e.currentTarget)}>{t('app.set_default_format') || "Set Default Format"}</MenuItem>
                         </Menu>
 
                         <Menu
@@ -663,7 +791,7 @@ const RightSidebar: React.FC = () => {
                             open={Boolean(copyFormatAnchorEl)}
                             onClose={() => setCopyFormatAnchorEl(null)}
                         >
-                            <MenuItem selected={defaultCopyFormat === 'text'} onClick={() => saveDefaultCopyFormat('text')}>Text</MenuItem>
+                            <MenuItem selected={defaultCopyFormat === 'text'} onClick={() => saveDefaultCopyFormat('text')}>{t('app.format_text') || "Text"}</MenuItem>
                             <MenuItem selected={defaultCopyFormat === 'markdown'} onClick={() => saveDefaultCopyFormat('markdown')}>Markdown</MenuItem>
                         </Menu>
 

@@ -215,7 +215,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                                     )}
                                 </Box>
                             }
-                            secondary={`${provider.base_url} - ${provider.default_model || (provider.models.length > 0 ? provider.models[0] : 'No model')}`}
+                            secondary={`${provider.base_url} - ${provider.default_model || (provider.models.length > 0 ? provider.models[0] : (t('settings.no_model') || 'No model'))}`}
                         />
                         <ListItemSecondaryAction>
                             <Switch

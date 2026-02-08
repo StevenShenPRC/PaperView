@@ -11,13 +11,30 @@ import { Virtuoso } from 'react-virtuoso';
 
 interface PaperListProps {
     papers: Paper[];
-    onUpdateMetadata: (paper: Paper) => void;
+    onUpdateMetadata: (paper: Paper) => Promise<void>;
     onTranslate: (paper: Paper) => void;
     batch: Batch | null;
 }
 
 const PaperList: React.FC<PaperListProps> = ({ papers, onUpdateMetadata, onTranslate, batch }) => {
     const { t } = useTranslation();
+
+    const [updatingIds, setUpdatingIds] = React.useState<Set<number>>(new Set());
+
+    const handleUpdateClick = async (paper: Paper) => {
+        setUpdatingIds(prev => new Set(prev).add(paper.id));
+        try {
+            await onUpdateMetadata(paper);
+        } catch (e) {
+            // Error handled in parent (Snackbar), but we need to stop spinner
+        } finally {
+            setUpdatingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(paper.id);
+                return newSet;
+            });
+        }
+    };
 
     return (
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -82,9 +99,10 @@ const PaperList: React.FC<PaperListProps> = ({ papers, onUpdateMetadata, onTrans
                                 </Button>
 
                                 <Button
-                                    startIcon={<RefreshIcon />}
+                                    startIcon={<RefreshIcon sx={{ animation: updatingIds.has(paper.id) ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />}
                                     size="small"
-                                    onClick={() => onUpdateMetadata(paper)}
+                                    onClick={() => handleUpdateClick(paper)}
+                                    disabled={updatingIds.has(paper.id)}
                                 >
                                     {t('app.update_metadata')}
                                 </Button>

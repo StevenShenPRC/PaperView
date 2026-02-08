@@ -6,6 +6,7 @@ mod db;
 mod doi;
 mod server;
 mod network;
+mod crawler;
 
 use tauri::{AppHandle, Emitter, State}; // Manager removed
 use tauri_plugin_store::StoreExt;
@@ -120,31 +121,132 @@ async fn update_metadata(app: AppHandle, state: State<'_, AppState>, id: i64, do
     // Get Proxy Config
     let (proxy_mode, proxy_url) = get_proxy_config(&app);
 
-    // 1. Fetch metadata
-    let metadata = doi::fetch_doi_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await.map_err(|e| e.to_string())?;
+    // 1. Fetch metadata (Try CrossRef/DOI.org first)
+    println!("Fetching metadata for DOI: {}", doi);
+    let mut metadata = doi::fetch_doi_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await.ok();
     
-    // 2. Extract fields
-    let title = metadata["title"].as_str()
-        .map(|s| s.to_string())
-        .or_else(|| metadata["title"].as_array().and_then(|arr| arr.first()?.as_str().map(|s| s.to_string())))
-        .unwrap_or_else(|| "".to_string());
+    let mut title = String::new();
+    let mut abstract_raw = String::new();
+    
+    // Check if CrossRef data is valid/complete
+    let mut valid_crossref = false;
+    if let Some(ref md) = metadata {
+        // Extract title
+        title = md["title"].as_str()
+            .map(|s| s.to_string())
+            .or_else(|| md["title"].as_array().and_then(|arr| arr.first()?.as_str().map(|s| s.to_string())))
+            .unwrap_or_else(|| "".to_string());
 
-    let abstract_raw = metadata["abstract"].as_str().unwrap_or("").to_string();
+        // Extract abstract
+        abstract_raw = md["abstract"].as_str().unwrap_or("").to_string();
+        
+        if !title.is_empty() {
+             // If abstract is empty or very short, we might consider it incomplete, 
+             // but sometimes papers just don't have abstracts. 
+             // However, user specifically asked to fallback if incomplete.
+             // Let's assume if abstract is missing/empty, we try fallback.
+             if !abstract_raw.is_empty() {
+                 valid_crossref = true;
+             }
+        }
+    }
     
-    // Basic cleanup
+    // Fallback to Semantic Scholar if needed
+    if !valid_crossref {
+        println!("CrossRef data incomplete or failed. Trying Semantic Scholar...");
+        match doi::fetch_semantic_scholar_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await {
+            Ok(ss_md) => {
+                println!("Semantic Scholar data received.");
+                // Overwrite or fill in
+                let ss_title = ss_md["title"].as_str().unwrap_or("").to_string();
+                let ss_abstract = ss_md["abstract"].as_str().unwrap_or("").to_string();
+                
+                if !ss_title.is_empty() && (title.is_empty() || title == "Unknown Title") {
+                    title = ss_title;
+                }
+                
+                // If CrossRef abstract was empty, use Semantic Scholar's
+                if abstract_raw.is_empty() && !ss_abstract.is_empty() {
+                    abstract_raw = ss_abstract;
+                } else if !ss_abstract.is_empty() && abstract_raw.len() < 50 && ss_abstract.len() > 50 {
+                     // Heuristic: if CrossRef abstract is surprisingly short (maybe just "Abstract") and SS is longer
+                     abstract_raw = ss_abstract;
+                }
+            },
+            Err(e) => {
+                println!("Semantic Scholar failed: {}", e);
+            }
+        }
+        
+        // 3. Crawler Fallback (Direct Publisher Crawl)
+        // If we still don't have a good abstract, try crawling
+        if abstract_raw.is_empty() {
+            println!("Trying direct crawler fallback...");
+            match crawler::fetch_metadata_by_crawling(&doi, &proxy_mode, proxy_url.as_deref()).await {
+                Ok(crawl_md) => {
+                    println!("Crawler success.");
+                    let c_title = crawl_md["title"].as_str().unwrap_or("").to_string();
+                    let c_abstract = crawl_md["abstract"].as_str().unwrap_or("").to_string();
+                    
+                    if !c_title.is_empty() && (title.is_empty() || title == "Unknown Title") {
+                        title = c_title;
+                    }
+                    if !c_abstract.is_empty() {
+                        abstract_raw = c_abstract;
+                    }
+                },
+                Err(ce) => {
+                     println!("Crawler failed: {}", ce);
+                     // Propagate rate limit errors to frontend so UI can show warning
+                     if ce.contains("Publisher policy limit") || ce.contains("risk control") {
+                         return Err(ce);
+                     }
+                }
+            }
+        }
+    }
+
+    if title.is_empty() && abstract_raw.is_empty() {
+         return Err(format!("Failed to fetch metadata from all sources for DOI {}", doi));
+    }
+
+    // Since we just added regex crate, let's use it.
+    // Note: We need to import regex at top or use full path.
+    // Let's use simple logic here to avoid import issues if not caught by analyzer yet, 
+    // but better to add `use regex::Regex;` at top of file.
+    // For now, I will use a robust replacement chain that covers common JATS tags found in Springer papers.
+    
     let abstract_text = abstract_raw
         .replace("<jats:p>", "")
         .replace("</jats:p>", "\n")
-        .replace("<p>", "")
-        .replace("</p>", "\n")
-        .replace("<jats:title>", "")
-        .replace("</jats:title>", "\n")
+        .replace("<jats:title>", "") // Often "Abstract" or section title
+        .replace("</jats:title>", ". ")
+        .replace("<jats:bold>", "")
+        .replace("</jats:bold>", "")
         .replace("<jats:italic>", "")
         .replace("</jats:italic>", "")
+        .replace("<jats:sub>", "_{")
+        .replace("</jats:sub>", "}")
+        .replace("<jats:sup>", "^{")
+        .replace("</jats:sup>", "}")
+        .replace("<p>", "")
+        .replace("</p>", "\n")
         .replace("<i>", "")
         .replace("</i>", "")
+        .replace("<b>", "")
+        .replace("</b>", "")
         .trim()
-        .to_string();
+        .to_string(); 
+        
+    // If we wanted to use Regex:
+    // let re = regex::Regex::new(r"<[^>]*>").unwrap();
+    // let abstract_text = re.replace_all(&abstract_raw, "").trim().to_string();
+    
+    // Using the manual chain above is safer without ensuring `use` is at top of file right now in this ReplaceChunk.
+    // But I will do a separate ReplaceChunk to add the import if I decide to use Regex.
+    // Actually, let's stick to the manual chain for now as it maps specific tags to formatting (like sub/sup) better than just stripping.
+    // Stripping <jats:sub>1</jats:sub> to "1" loses meaning (CO2 vs CO2). "_{1}" is better LaTeX-ish style.
+
     
     // 3. Update DB
     let db_path_read = state.db_path.clone();

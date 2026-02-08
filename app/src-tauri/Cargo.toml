@@ -1,7 +1,7 @@
 [package]
-name = "app"
-version = "0.1.0"
-description = "A Tauri App"
+name = "paperview"
+version = "0.1.0-alpha.0"
+description = "PaperView - AI-powered Paper Manager"
 authors = ["you"]
 edition = "2021"
 
@@ -29,5 +29,7 @@ tauri-plugin-store = "2"
 reqwest = { version = "0.11", features = ["json", "blocking", "stream", "socks"] }
 tower-http = { version = "0.5", features = ["cors"] }
 futures = "0.3"
+regex = "1"
+once_cell = "1"
 
 

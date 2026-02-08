@@ -1,0 +1,1398 @@
+{
+    "indexed": {
+        "date-parts": [
+            [
+                2026,
+                1,
+                8
+            ]
+        ],
+        "date-time": "2026-01-08T18:36:49Z",
+        "timestamp": 1767897409526,
+        "version": "3.49.0"
+    },
+    "reference-count": 106,
+    "publisher": "Springer Science and Business Media LLC",
+    "issue": "2",
+    "license": [
+        {
+            "start": {
+                "date-parts": [
+                    [
+                        2025,
+                        11,
+                        1
+                    ]
+                ],
+                "date-time": "2025-11-01T00:00:00Z",
+                "timestamp": 1761955200000
+            },
+            "content-version": "tdm",
+            "delay-in-days": 0,
+            "URL": "https://www.springernature.com/gp/researchers/text-and-data-mining"
+        },
+        {
+            "start": {
+                "date-parts": [
+                    [
+                        2025,
+                        11,
+                        1
+                    ]
+                ],
+                "date-time": "2025-11-01T00:00:00Z",
+                "timestamp": 1761955200000
+            },
+            "content-version": "vor",
+            "delay-in-days": 0,
+            "URL": "https://www.springernature.com/gp/researchers/text-and-data-mining"
+        }
+    ],
+    "content-domain": {
+        "domain": [
+            "link.springer.com"
+        ],
+        "crossmark-restriction": false
+    },
+    "published-print": {
+        "date-parts": [
+            [
+                2026,
+                1
+            ]
+        ]
+    },
+    "DOI": "10.1007/s00216-025-06177-4",
+    "type": "journal-article",
+    "created": {
+        "date-parts": [
+            [
+                2025,
+                11,
+                1
+            ]
+        ],
+        "date-time": "2025-11-01T08:32:40Z",
+        "timestamp": 1761985960000
+    },
+    "page": "437-457",
+    "update-policy": "https://doi.org/10.1007/springer_crossmark_policy",
+    "source": "Crossref",
+    "is-referenced-by-count": 0,
+    "title": "Advancing precision medicine with bioelectroanalytical technologies leveraging unconventional nucleic acid forms",
+    "prefix": "10.1007",
+    "volume": "418",
+    "author": [
+        {
+            "given": "Rebeca M.",
+            "family": "Torrente-Rodríguez",
+            "sequence": "first",
+            "affiliation": []
+        },
+        {
+            "given": "Maria",
+            "family": "Gamella",
+            "sequence": "additional",
+            "affiliation": []
+        },
+        {
+            "given": "Víctor",
+            "family": "Ruiz-Valdepeñas Montiel",
+            "sequence": "additional",
+            "affiliation": []
+        },
+        {
+            "given": "José M.",
+            "family": "Pingarrón",
+            "sequence": "additional",
+            "affiliation": []
+        },
+        {
+            "given": "Susana",
+            "family": "Campuzano",
+            "sequence": "additional",
+            "affiliation": []
+        }
+    ],
+    "member": "297",
+    "published-online": {
+        "date-parts": [
+            [
+                2025,
+                11,
+                1
+            ]
+        ]
+    },
+    "reference": [
+        {
+            "key": "6177_CR1",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.microb.2025.100368",
+            "author": "JG Cockburn",
+            "year": "2025",
+            "unstructured": "Cockburn JG, Mariappan V, Loke MF, Al-Maleki AR, Muttiah B, Vellasamy KM, Vadivelu J. Integrative research: current trends and considerations for biomarker discovery and precision medicine. Microbe. 2025. https://doi.org/10.1016/j.microb.2025.100368.",
+            "journal-title": "Microbe"
+        },
+        {
+            "issue": "4",
+            "key": "6177_CR2",
+            "doi-asserted-by": "publisher",
+            "first-page": "433",
+            "DOI": "10.1042/EBC20180038",
+            "volume": "63",
+            "author": "S Minchin",
+            "year": "2019",
+            "unstructured": "Minchin S, Lodge J. Understanding biochemistry: structure and function of nucleic acids. Essays Biochem. 2019;63(4):433–56. https://doi.org/10.1042/EBC20180038.",
+            "journal-title": "Essays Biochem"
+        },
+        {
+            "key": "6177_CR3",
+            "doi-asserted-by": "publisher",
+            "first-page": "938",
+            "DOI": "10.1038/s12276-025-01453-w",
+            "volume": "57",
+            "author": "S Shin",
+            "year": "2025",
+            "unstructured": "Shin S, Kim J, Song E, Han S, Hohng S. Analytical techniques for nucleic acid and protein detection with single-molecule sensitivity. Exp Mol Med. 2025;57:938–49. https://doi.org/10.1038/s12276-025-01453-w.",
+            "journal-title": "Exp Mol Med"
+        },
+        {
+            "issue": "5",
+            "key": "6177_CR4",
+            "doi-asserted-by": "publisher",
+            "first-page": "643",
+            "DOI": "10.1042/EBC20170053",
+            "volume": "62",
+            "author": "M Jackson",
+            "year": "2018",
+            "unstructured": "Jackson M, Marks L, May GH, Wilson JB. The genetic basis of disease. Essays Biochem. 2018;62(5):643–723. https://doi.org/10.1042/EBC20170053.",
+            "journal-title": "Essays Biochem"
+        },
+        {
+            "issue": "5",
+            "key": "6177_CR5",
+            "doi-asserted-by": "publisher",
+            "first-page": "250",
+            "DOI": "10.33564/ijeast.2021.v06i05.038",
+            "volume": "6",
+            "author": "P Kalra",
+            "year": "2021",
+            "unstructured": "Kalra P. A comprehensive review on genetics and its impact on human diseases. IJEAST. 2021;6(5):250–6. https://doi.org/10.33564/ijeast.2021.v06i05.038.",
+            "journal-title": "IJEAST"
+        },
+        {
+            "key": "6177_CR6",
+            "doi-asserted-by": "publisher",
+            "first-page": "1188978",
+            "DOI": "10.3389/fgene.2023.1188978",
+            "volume": "14",
+            "author": "R Satange",
+            "year": "2023",
+            "unstructured": "Satange R, Jin P, Hou MH, Rode AB. Non-canonical nucleic acid structures, functions and their applications for understanding human genetic diseases. Front Genet. 2023;14:1188978. https://doi.org/10.3389/fgene.2023.1188978.",
+            "journal-title": "Front Genet"
+        },
+        {
+            "key": "6177_CR7",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bbcan.2025.189363",
+            "author": "Z Pan",
+            "year": "2025",
+            "unstructured": "Pan Z, Zeng Z, Xiong W, Fan C. The roles and mechanisms of non-canonical RNA secondary structures in tumors. Biochimica et Biophysica Acta (BBA). 2025. https://doi.org/10.1016/j.bbcan.2025.189363.",
+            "journal-title": "Biochimica et Biophysica Acta (BBA)"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR8",
+            "doi-asserted-by": "publisher",
+            "first-page": "77",
+            "DOI": "10.1007/s10142-025-01575-4",
+            "volume": "25",
+            "author": "S Sur",
+            "year": "2025",
+            "unstructured": "Sur S, Pal JK, Shekhar S, Bafna P, Bhattacharyya R. Emerging role and clinical applications of circular RNAs in human diseases. Funct Integr Genomics. 2025;25(1):77. https://doi.org/10.1007/s10142-025-01575-4.",
+            "journal-title": "Funct Integr Genomics"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR9",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1002/jcb.30702",
+            "volume": "126",
+            "author": "J Shen",
+            "year": "2025",
+            "unstructured": "Shen J, Wang Q, Huang Q, Ying X, Wang Z, Xu Z, Dong J, Duan S. Recent insights into wnt-related tRNA-derived fragments (tRFs) in human diseases. J Cell Biochem. 2025;126(1): e30702. https://doi.org/10.1002/jcb.30702.",
+            "journal-title": "J Cell Biochem"
+        },
+        {
+            "issue": "5720",
+            "key": "6177_CR10",
+            "doi-asserted-by": "publisher",
+            "first-page": "339",
+            "DOI": "10.1038/280339a0",
+            "volume": "280",
+            "author": "MT Hsu",
+            "year": "1979",
+            "unstructured": "Hsu MT, Coca-Prados M. Electron microscopic evidence for the circular form of RNA in the cytoplasm of eukaryotic cells. Nature. 1979;280(5720):339–40. https://doi.org/10.1038/280339a0.",
+            "journal-title": "Nature"
+        },
+        {
+            "issue": "38",
+            "key": "6177_CR11",
+            "doi-asserted-by": "publisher",
+            "first-page": "2783",
+            "DOI": "10.1038/s41388-023-02780-w",
+            "volume": "42",
+            "author": "G Pisignano",
+            "year": "2023",
+            "unstructured": "Pisignano G, Michael DC, Visal TH, Pirlog R, Ladomery M, Calin GA. Going circular: history, present, and future of circRNAs in cancer. Oncogene. 2023;42(38):2783–800. https://doi.org/10.1038/s41388-023-02780-w.",
+            "journal-title": "Oncogene"
+        },
+        {
+            "key": "6177_CR12",
+            "doi-asserted-by": "publisher",
+            "unstructured": "Drula R, Braicu C, Berindan‐Neagoe I. Current advances in circular RNA detection and investigation methods: are we running in circles? Wiley Interdiscip Rev RNA. 2024;15(3):e1850. https://doi.org/10.1002/wrna.1850.",
+            "DOI": "10.1002/wrna.1850"
+        },
+        {
+            "issue": "11",
+            "key": "6177_CR13",
+            "doi-asserted-by": "publisher",
+            "first-page": "675",
+            "DOI": "10.1038/s41576-019-0158-7",
+            "volume": "20",
+            "author": "LS Kristensen",
+            "year": "2019",
+            "unstructured": "Kristensen LS, Andersen MS, Stagsted LV, Ebbesen KK, Hansen TB, Kjems J. The biogenesis, biology and characterization of circular RNAs. Nat Rev Genet. 2019;20(11):675–91. https://doi.org/10.1038/s41576-019-0158-7.",
+            "journal-title": "Nat Rev Genet"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR14",
+            "doi-asserted-by": "publisher",
+            "first-page": "13",
+            "DOI": "10.1186/s12943-020-01298-z",
+            "volume": "20",
+            "author": "S Wang",
+            "year": "2021",
+            "unstructured": "Wang S, Zhang K, Tan S, Xin J, Yuan Q, Xu H, Liang Q, Christiani DC, Wang M, Liu L, Du M. Circular rnas in body fluids as cancer biomarkers: the new frontier of liquid biopsies. Mol Cancer. 2021;20(1):13. https://doi.org/10.1186/s12943-020-01298-z.",
+            "journal-title": "Mol Cancer"
+        },
+        {
+            "issue": "10",
+            "key": "6177_CR15",
+            "doi-asserted-by": "publisher",
+            "first-page": "790",
+            "DOI": "10.1016/j.tibs.2021.05.001",
+            "volume": "46",
+            "author": "Q Chen",
+            "year": "2021",
+            "unstructured": "Chen Q, Zhang X, Shi J, Yan M, Zhou T. Origins and evolving functionalities of tRNA-derived small RNAs. Trends Biochem Sci. 2021;46(10):790–804. https://doi.org/10.1016/j.tibs.2021.05.001.",
+            "journal-title": "Trends Biochem Sci"
+        },
+        {
+            "issue": "11",
+            "key": "6177_CR16",
+            "doi-asserted-by": "publisher",
+            "first-page": "748",
+            "DOI": "10.1038/s41419-023-06250-9",
+            "volume": "14",
+            "author": "L Zhang",
+            "year": "2023",
+            "unstructured": "Zhang L, Liu J, Hou Y. Classification, function, and advances in tsRNA in non-neoplastic diseases. Cell Death Dis. 2023;14(11):748. https://doi.org/10.1038/s41419-023-06250-9.",
+            "journal-title": "Cell Death Dis"
+        },
+        {
+            "issue": "5",
+            "key": "6177_CR17",
+            "first-page": "1656",
+            "volume": "13",
+            "author": "Y Zhao",
+            "year": "2023",
+            "unstructured": "Zhao Y, Li X, Ye C, Huang C, Lv X, Li J. The biogenesis, mechanism and function of the tRNA-derived small RNA (tsRNA): a review compared with microRNA. Am J Cancer Res. 2023;13(5):1656.",
+            "journal-title": "Am J Cancer Res"
+        },
+        {
+            "issue": "16",
+            "key": "6177_CR18",
+            "doi-asserted-by": "publisher",
+            "first-page": "2379",
+            "DOI": "10.1039/C9CC09771F",
+            "volume": "56",
+            "author": "H Tateishi-Karimata",
+            "year": "2020",
+            "unstructured": "Tateishi-Karimata H, Sugimoto N. Chemical biology of non-canonical structures of nucleic acids for therapeutic applications. Chem Commun. 2020;56(16):2379–90. https://doi.org/10.1039/C9CC09771F.",
+            "journal-title": "Chem Commun"
+        },
+        {
+            "issue": "14",
+            "key": "6177_CR19",
+            "doi-asserted-by": "publisher",
+            "first-page": "7839",
+            "DOI": "10.1093/nar/gkab580",
+            "volume": "49",
+            "author": "H Tateishi-Karimata",
+            "year": "2021",
+            "unstructured": "Tateishi-Karimata H, Sugimoto N. Roles of non-canonical structures of nucleic acids in cancer and neurodegenerative diseases. Nucleic Acids Res. 2021;49(14):7839–55. https://doi.org/10.1093/nar/gkab580.",
+            "journal-title": "Nucleic Acids Res"
+        },
+        {
+            "key": "6177_CR20",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3389/fgene.2022.959258",
+            "volume": "13",
+            "author": "A Bansal",
+            "year": "2022",
+            "unstructured": "Bansal A, Kaushik S, Kukreti S. Non-canonical DNA structures: diversity and disease association. Front Genet. 2022;13: 959258. https://doi.org/10.3389/fgene.2022.959258.",
+            "journal-title": "Front Genet"
+        },
+        {
+            "issue": "4",
+            "key": "6177_CR21",
+            "doi-asserted-by": "publisher",
+            "first-page": "211",
+            "DOI": "10.1038/s41576-022-00539-9",
+            "volume": "24",
+            "author": "G Wang",
+            "year": "2023",
+            "unstructured": "Wang G, Vasquez KM. Dynamic alternative DNA structures in biology and disease. Nat Rev Genet. 2023;24(4):211–34. https://doi.org/10.1038/s41576-022-00539-9.",
+            "journal-title": "Nat Rev Genet"
+        },
+        {
+            "key": "6177_CR22",
+            "doi-asserted-by": "publisher",
+            "first-page": "176",
+            "DOI": "10.1016/j.biochi.2023.07.002",
+            "volume": "214",
+            "author": "RC Duardo",
+            "year": "2023",
+            "unstructured": "Duardo RC, Guerra F, Pepe S, Capranico G. Non-B DNA structures as a booster of genome instability. Biochimie. 2023;214:176–92. https://doi.org/10.1016/j.biochi.2023.07.002.",
+            "journal-title": "Biochimie"
+        },
+        {
+            "issue": "9",
+            "key": "6177_CR23",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3390/ijms25094952",
+            "volume": "25",
+            "author": "J Amato",
+            "year": "2024",
+            "unstructured": "Amato J, Randazzo A, Pagano B. Chemistry and biology of noncanonical nucleic acid structures: from physicochemical properties to therapeutic applications. Int J Mol Sci. 2024;25(9):4952. https://doi.org/10.3390/ijms25094952.",
+            "journal-title": "Int J Mol Sci"
+        },
+        {
+            "key": "6177_CR24",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3389/fchem.2024.1384201",
+            "volume": "12",
+            "author": "L Trizna",
+            "year": "2024",
+            "unstructured": "Trizna L, Olajoš J, Víglaský V. DNA minicircles capable of forming a variety of non-canonical structural motifs. Front Chem. 2024;12: 1384201. https://doi.org/10.3389/fchem.2024.1384201.",
+            "journal-title": "Front Chem"
+        },
+        {
+            "key": "6177_CR25",
+            "doi-asserted-by": "publisher",
+            "first-page": "6",
+            "DOI": "10.7203/metode.12.16505",
+            "volume": "12",
+            "author": "IP Niclòs",
+            "year": "2022",
+            "unstructured": "Niclòs IP, García JG. Beyond the double helix: the structure of DNA G-quadruplexes. Metode Sci Stud J. 2022;12:6–13. https://doi.org/10.7203/metode.12.16505.",
+            "journal-title": "Metode Sci Stud J"
+        },
+        {
+            "issue": "17",
+            "key": "6177_CR26",
+            "doi-asserted-by": "publisher",
+            "first-page": "3459",
+            "DOI": "10.1111/j.1742-4658.2010.07759.x",
+            "volume": "277",
+            "author": "TA Brooks",
+            "year": "2010",
+            "unstructured": "Brooks TA, Kendrick S, Hurley L. Making sense of G-quadruplex and i-motif functions in oncogene promoters. FEBS J. 2010;277(17):3459–69. https://doi.org/10.1111/j.1742-4658.2010.07759.x.",
+            "journal-title": "FEBS J"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR27",
+            "doi-asserted-by": "publisher",
+            "first-page": "30",
+            "DOI": "10.1186/s13578-025-01367-0",
+            "volume": "15",
+            "author": "C Cao",
+            "year": "2025",
+            "unstructured": "Cao C, Gong W, Shuai Y, Rasouli S, Ge Q, Khan A, Dakic A, Putluri N, Shvets G, Zheng Y-L, Daneshdoust D, Mahyoob R, Li J, Liu X. Canonical and non-canonical functions of the non-coding RNA component (TERC) of telomerase complex. Cell Biosci. 2025;15(1):30. https://doi.org/10.1186/s13578-025-01367-0.",
+            "journal-title": "Cell Biosci"
+        },
+        {
+            "key": "6177_CR28",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.coelec.2023.101423",
+            "volume": "43",
+            "author": "AM Chiorcea-Paquim",
+            "year": "2024",
+            "unstructured": "Chiorcea-Paquim AM. Recent advances in electrochemical biosensor technologies for the detection of telomerase activity. Curr Opin Electrochem. 2024;43: 101423. https://doi.org/10.1016/j.coelec.2023.101423.",
+            "journal-title": "Curr Opin Electrochem"
+        },
+        {
+            "key": "6177_CR29",
+            "doi-asserted-by": "publisher",
+            "first-page": "107",
+            "DOI": "10.3390/cells8020107",
+            "volume": "8",
+            "author": "K Okamoto",
+            "year": "2019",
+            "unstructured": "Okamoto K, Seimiya HJC. Revisiting telomere shortening in cancer. Cells. 2019;8:107. https://doi.org/10.3390/cells8020107.",
+            "journal-title": "Cells"
+        },
+        {
+            "key": "6177_CR30",
+            "doi-asserted-by": "publisher",
+            "first-page": "299",
+            "DOI": "10.1038/s41576-019-0099-1",
+            "volume": "20",
+            "author": "JW Shay",
+            "year": "2019",
+            "unstructured": "Shay JW, Wright WE. Telomeres and telomerase: three decades of progress. Nat Rev Genet. 2019;20:299–309. https://doi.org/10.1038/s41576-019-0099-1.",
+            "journal-title": "Nat Rev Genet"
+        },
+        {
+            "key": "6177_CR31",
+            "doi-asserted-by": "publisher",
+            "first-page": "306",
+            "DOI": "10.1016/j.cell.2020.12.028",
+            "volume": "184",
+            "author": "D Chakravarti",
+            "year": "2021",
+            "unstructured": "Chakravarti D, LaBella KA, DePinho RA. Telomeres: history, health, and hallmarks of aging. Cell. 2021;184:306–22. https://doi.org/10.1016/j.cell.2020.12.028.",
+            "journal-title": "Cell"
+        },
+        {
+            "key": "6177_CR32",
+            "doi-asserted-by": "publisher",
+            "first-page": "564",
+            "DOI": "10.1038/sj.onc.1205083",
+            "volume": "21",
+            "author": "K Collins",
+            "year": "2002",
+            "unstructured": "Collins K, Mitchell JR. Telomerase in the human organism. Oncogene. 2002;21:564–79. https://doi.org/10.1038/sj.onc.1205083.",
+            "journal-title": "Oncogene"
+        },
+        {
+            "key": "6177_CR33",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.phrs.2020.104726",
+            "volume": "155",
+            "author": "L Wu",
+            "year": "2020",
+            "unstructured": "Wu L, Fidan K, Um JY, Ahn KS. Telomerase: key regulator of inflammation and cancer. Pharmacol Res. 2020;155: 104726. https://doi.org/10.1016/j.phrs.2020.104726.",
+            "journal-title": "Pharmacol Res"
+        },
+        {
+            "key": "6177_CR34",
+            "doi-asserted-by": "publisher",
+            "first-page": "139",
+            "DOI": "10.1038/s41467-020-20474-9",
+            "volume": "12",
+            "author": "N Noureen",
+            "year": "2021",
+            "unstructured": "Noureen N, Wu S, Lv YL, Yang J, Yung AWK, Gelfond J, Wang X, Koul D, Ludlow A, Zheng S. Integrated analysis of telomerase enzymatic activity unravels an association with cancer stemness and proliferation. Nat Commun. 2021;12:139. https://doi.org/10.1038/s41467-020-20474-9.",
+            "journal-title": "Nat Commun"
+        },
+        {
+            "key": "6177_CR35",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3390/ijms20081823",
+            "volume": "20",
+            "author": "E Mizukoshi",
+            "year": "2019",
+            "unstructured": "Mizukoshi E, Kaneko S. Telomerase-targeted cancer immunotherapy. Int J Mol Sci. 2019;20: 1823. https://doi.org/10.3390/ijms20081823.",
+            "journal-title": "Int J Mol Sci"
+        },
+        {
+            "key": "6177_CR36",
+            "doi-asserted-by": "publisher",
+            "unstructured": "Negrini S, De Palma S, Filaci G. Anti-cancer immunotherapies targeting telomerase. Cancers. 2020;12:2260. https://doi.org/10.3390/cancers12082260.",
+            "DOI": "10.3390/cancers12082260"
+        },
+        {
+            "key": "6177_CR37",
+            "doi-asserted-by": "publisher",
+            "first-page": "69",
+            "DOI": "10.1186/s13073-016-0324-x",
+            "volume": "8",
+            "author": "MA Jafri",
+            "year": "2016",
+            "unstructured": "Jafri MA, Ansari SA, Alqahtani MH, Shay JW. Roles of telomeres and telomerase in cancer, and advances in telomerase-targeted therapies. Genome Med. 2016;8:69. https://doi.org/10.1186/s13073-016-0324-x.",
+            "journal-title": "Genome Med"
+        },
+        {
+            "key": "6177_CR38",
+            "doi-asserted-by": "publisher",
+            "unstructured": "Le Brun E, Arluison V, Wien F. Application of synchrotron radiation circular dichroism for RNA structural analysis. In: RNA Spectroscopy: Methods and Protocols. New York, NY: Springer US; 2020. p. 135–48. https://doi.org/10.1007/978-1-0716-0278-2_11.",
+            "DOI": "10.1007/978-1-0716-0278-2_11"
+        },
+        {
+            "issue": "3",
+            "key": "6177_CR39",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.32607/actanaturae.11705",
+            "volume": "14",
+            "author": "EV Dubrovin",
+            "year": "2022",
+            "unstructured": "Dubrovin EV, Barinov NA, Klinov DV. Visualization of G-quadruplexes, i-motifs and their associates. Acta Naturae. 2022;14(3): 4. https://doi.org/10.32607/actanaturae.11705.",
+            "journal-title": "Acta Naturae"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR40",
+            "doi-asserted-by": "publisher",
+            "first-page": "100187",
+            "DOI": "10.1016/j.bpr.2024.100187",
+            "volume": "5",
+            "author": "L Diggins",
+            "year": "2025",
+            "unstructured": "Diggins L, Ross D, Bhanot S, Corallo R, Daley R, Patel K, Lewis O, Donahue S, Thaddeus J, Hiers L, Syed C, Eagerton D, Mohanty BK. CD spectra reveal the state of G-quadruplexes and i-motifs in repeated and other DNA sequences. Biophys Rep. 2025;5(1):100187. https://doi.org/10.1016/j.bpr.2024.100187.",
+            "journal-title": "Biophys Rep"
+        },
+        {
+            "issue": "20",
+            "key": "6177_CR41",
+            "doi-asserted-by": "publisher",
+            "first-page": "3622",
+            "DOI": "10.1016/j.molcel.2023.08.018",
+            "volume": "83",
+            "author": "G Matos-Rodrigues",
+            "year": "2023",
+            "unstructured": "Matos-Rodrigues G, Hisey JA, Nussenzweig A, Mirkin SM. Detection of alternative DNA structures and its implications for human disease. Mol Cell. 2023;83(20):3622–41. https://doi.org/10.1016/j.molcel.2023.08.018.",
+            "journal-title": "Mol Cell"
+        },
+        {
+            "issue": "3",
+            "key": "6177_CR42",
+            "doi-asserted-by": "publisher",
+            "first-page": "870",
+            "DOI": "10.1038/s41596-021-00671-6",
+            "volume": "17",
+            "author": "SY Yang",
+            "year": "2022",
+            "unstructured": "Yang SY, Monchaud D, Wong JM. Global mapping of RNA G-quadruplexes (G4-RNAs) using G4RP-seq. Nat Protoc. 2022;17(3):870–89. https://doi.org/10.1038/s41596-021-00671-6.",
+            "journal-title": "Nat Protoc"
+        },
+        {
+            "issue": "6",
+            "key": "6177_CR43",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1093/bib/bbac441",
+            "volume": "23",
+            "author": "X Shi",
+            "year": "2022",
+            "unstructured": "Shi X, Teng H, Sun Z. An updated overview of experimental and computational approaches to identify non-canonical DNA/RNA structures with emphasis on G-quadruplexes and R-loops. Brief Bioinform. 2022;23(6): bbac441. https://doi.org/10.1093/bib/bbac441.",
+            "journal-title": "Brief Bioinform"
+        },
+        {
+            "issue": "1",
+            "key": "6177_CR44",
+            "doi-asserted-by": "publisher",
+            "first-page": "177",
+            "DOI": "10.1186/s12915-024-01971-5",
+            "volume": "22",
+            "author": "R Zhang",
+            "year": "2024",
+            "unstructured": "Zhang R, Wang Y, Wang C, Sun X, Mergny JL. G-quadruplexes as pivotal components of cis-regulatory elements in the human genome. BMC Biol. 2024;22(1):177. https://doi.org/10.1186/s12915-024-01971-5.",
+            "journal-title": "BMC Biol"
+        },
+        {
+            "key": "6177_CR45",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3389/fgene.2022.823241",
+            "volume": "13",
+            "author": "C Alecki",
+            "year": "2022",
+            "unstructured": "Alecki C, Vera M. Role of nuclear non-canonical nucleic acid structures in organismal development and adaptation to stress conditions. Front Genet. 2022;13: 823241. https://doi.org/10.3389/fgene.2022.823241.",
+            "journal-title": "Front Genet"
+        },
+        {
+            "key": "6177_CR46",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.trac.2024.118112",
+            "volume": "183",
+            "author": "T Dong",
+            "year": "2025",
+            "unstructured": "Dong T, Pires NMM, Yang Z, Correia JH, Jing W, Lin Q, Zhao L, Wen Y, Jiang Z. Advances in molecular assays and biosensors for circular RNA-based diagnostics and therapeutic monitoring. TrAC-Trends Anal Chem. 2025;183: 118112. https://doi.org/10.1016/j.trac.2024.118112.",
+            "journal-title": "TrAC-Trends Anal Chem"
+        },
+        {
+            "key": "6177_CR47",
+            "doi-asserted-by": "publisher",
+            "first-page": "116115",
+            "DOI": "10.1016/j.trac.2020.116115",
+            "volume": "134",
+            "author": "D Wang",
+            "year": "2021",
+            "unstructured": "Wang D, Xue W, Ren X, Xu Z. A review on sensing mechanisms and strategies for telomerase activity detection. TrAC-Trends Anal Chem. 2021;134:116115. https://doi.org/10.1016/j.trac.2020.116115.",
+            "journal-title": "TrAC-Trends Anal Chem"
+        },
+        {
+            "key": "6177_CR48",
+            "doi-asserted-by": "publisher",
+            "first-page": "61",
+            "DOI": "10.1016/j.aca.2020.11.037",
+            "volume": "1146",
+            "author": "Y Chen",
+            "year": "2021",
+            "unstructured": "Chen Y, Deng Y, Cao G, Liu X, Gu T, Feng R, Huo D, Xu F, Hou C. An ultrasensitive and point-of-care sensor for the telomerase activity detection. Anal Chim Acta. 2021;1146:61–9. https://doi.org/10.1016/j.aca.2020.11.037.",
+            "journal-title": "Anal Chim Acta"
+        },
+        {
+            "key": "6177_CR49",
+            "doi-asserted-by": "publisher",
+            "first-page": "133",
+            "DOI": "10.1016/j.aca.2019.11.035",
+            "volume": "1098",
+            "author": "G Yang",
+            "year": "2020",
+            "unstructured": "Yang G, Zhang Q, Ma L, Zheng Y, Tian F, Li H, Zhang P, Qu L-L. Sensitive detection of telomerase activity in cells using a DNA-based fluorescence resonance energy transfer nanoprobe. Anal Chim Acta. 2020;1098:133–9. https://doi.org/10.1016/j.aca.2019.11.035.",
+            "journal-title": "Anal Chim Acta"
+        },
+        {
+            "key": "6177_CR50",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.snb.2022.131362",
+            "volume": "356",
+            "author": "L Yang",
+            "year": "2022",
+            "unstructured": "Yang L, Lu F, Guo H, Li F, Hou T. A dual-amplification label-free ratiometric fluorescent sensor for accurate monitoring of telomerase activity based on unique intercalation characteristics of dyes toward different DNA structures. Sens Actuators B Chem. 2022;356: 131362. https://doi.org/10.1016/j.snb.2022.131362.",
+            "journal-title": "Sens Actuators B Chem"
+        },
+        {
+            "key": "6177_CR51",
+            "doi-asserted-by": "publisher",
+            "first-page": "3095",
+            "DOI": "10.1039/D1CC00455G",
+            "volume": "57",
+            "author": "S Chen",
+            "year": "2021",
+            "unstructured": "Chen S, Zhao J, Shi B, Xu C, Zhao S. An ultrasensitive chemiluminescence strategy based on a microchip platform for telomerase detection at a single-cell level. Chem Commun. 2021;57:3095–8. https://doi.org/10.1039/D1CC00455G.",
+            "journal-title": "Chem Commun"
+        },
+        {
+            "key": "6177_CR52",
+            "doi-asserted-by": "publisher",
+            "first-page": "211",
+            "DOI": "10.1021/acssensors.8b01244",
+            "volume": "4",
+            "author": "E Feng",
+            "year": "2019",
+            "unstructured": "Feng E, Zheng T, Tian Y. Dual-mode Au nanoprobe based on surface enhancement Raman scattering and colorimetry for sensitive determination of telomerase activity both in cell extracts and in the urine of patients. ACS Sens. 2019;4:211–7. https://doi.org/10.1021/acssensors.8b01244.",
+            "journal-title": "ACS Sens"
+        },
+        {
+            "key": "6177_CR53",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.talanta.2021.122814",
+            "volume": "235",
+            "author": "G Fan",
+            "year": "2021",
+            "unstructured": "Fan G, Li X, Xu S, Dai C, Xue Q, Wang H. SERS-based copper-mediated signal amplification strategy for simple and sensitive detection of telomerase activity. Talanta. 2021;235: 122814. https://doi.org/10.1016/j.talanta.2021.122814.",
+            "journal-title": "Talanta"
+        },
+        {
+            "key": "6177_CR54",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bioelechem.2025.108916",
+            "volume": "164",
+            "author": "Y Zhang",
+            "year": "2025",
+            "unstructured": "Zhang Y, Gao L, Shi Z, Wu Q, Miao X. Paper-based electrochemiluminescence telomerase activity detection using hybridization chain reaction and CRISPR/Cas12a dual signal amplification. Bioelectrochem. 2025;164: 108916. https://doi.org/10.1016/j.bioelechem.2025.108916.",
+            "journal-title": "Bioelectrochem"
+        },
+        {
+            "key": "6177_CR55",
+            "doi-asserted-by": "publisher",
+            "first-page": "114048",
+            "DOI": "10.1016/j.bios.2022.114048",
+            "volume": "203",
+            "author": "J-H Zhu",
+            "year": "2022",
+            "unstructured": "Zhu J-H, Gou H, Zhao T, Mei L-P, Wang A-I, Feng J-J. Ultrasensitive photoelectrochemical aptasensor for detecting telomerase activity based on Ag2S/Ag decorated ZnIn2S4/C3N4 3D/2D Z-scheme heterostructures and amplified by Au/Cu2+-boron-nitride nanozyme. Biosens Bioelectron. 2022;203:114048. https://doi.org/10.1016/j.bios.2022.114048.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR56",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1002/jcla.23800",
+            "volume": "35",
+            "author": "R Wang",
+            "year": "2021",
+            "unstructured": "Wang R, Li J, Jin R, Ye Q, Cheng L, Liu R. Nonradioactive direct telomerase activity detection using biotin-labeled primers. J Clin Lab Anal. 2021;35: e23800. https://doi.org/10.1002/jcla.23800.",
+            "journal-title": "J Clin Lab Anal"
+        },
+        {
+            "key": "6177_CR57",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2023.115407",
+            "volume": "237",
+            "author": "H Bai",
+            "year": "2023",
+            "unstructured": "Bai H, Wang Y, Li X, Guo J. Electrochemical nucleic acid sensors: competent pathways for mobile molecular diagnostics. Biosens Bioelectron. 2023;237: 115407. https://doi.org/10.1016/j.bios.2023.115407.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR58",
+            "doi-asserted-by": "publisher",
+            "first-page": "7960",
+            "DOI": "10.1039/D4CS00001C",
+            "volume": "53",
+            "author": "C Ye",
+            "year": "2024",
+            "unstructured": "Ye C, Lukas H, Wang M, Lee Y, Gao W. Nucleic acid-based wearable and implantable electrochemical sensors. Chem Soc Rev. 2024;53:7960–82. https://doi.org/10.1039/D4CS00001C.",
+            "journal-title": "Chem Soc Rev"
+        },
+        {
+            "key": "6177_CR59",
+            "doi-asserted-by": "publisher",
+            "first-page": "136",
+            "DOI": "10.1007/s00604-024-06206-6",
+            "volume": "191",
+            "author": "S Campuzano",
+            "year": "2024",
+            "unstructured": "Campuzano S, Lobo-Castañón MJ. (Nano) bioelectroanalytical tools driven research in personalized medicine and nutrition. Microchim Acta. 2024;191:136. https://doi.org/10.1007/s00604-024-06206-6.",
+            "journal-title": "Microchim Acta"
+        },
+        {
+            "key": "6177_CR60",
+            "doi-asserted-by": "publisher",
+            "first-page": "12491",
+            "DOI": "10.1021/acs.chemrev.5b00428",
+            "volume": "115",
+            "author": "Y Zhao",
+            "year": "2015",
+            "unstructured": "Zhao Y, Chen F, Li Q, Wang L, Fan C. Isothermal amplification of nucleic acids. Chem Rev. 2015;115:12491–545. https://doi.org/10.1021/acs.chemrev.5b00428.",
+            "journal-title": "Chem Rev"
+        },
+        {
+            "key": "6177_CR61",
+            "doi-asserted-by": "publisher",
+            "first-page": "116582",
+            "DOI": "10.1016/j.trac.2022.116582",
+            "volume": "151",
+            "author": "Z Luo",
+            "year": "2022",
+            "unstructured": "Luo Z, Li Y, Zhang P, He L, Feng Y, Feng Y, Quian C, Tian Y, Duan Y. Catalytic hairpin assembly as cascade nucleic acid circuits for fluorescent biosensor: design, evolution and application. TrAC Trends Anal Chem. 2022;151:116582. https://doi.org/10.1016/j.trac.2022.116582.",
+            "journal-title": "TrAC Trends Anal Chem"
+        },
+        {
+            "key": "6177_CR62",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.xcrp.2024.101801",
+            "volume": "5",
+            "author": "X Wang",
+            "year": "2024",
+            "unstructured": "Wang X, Zhou J, Wang H. Bioreceptors as the key components for electrochemical biosensing in medicine. Cell Rep Phys Sci. 2024;5: 101801. https://doi.org/10.1016/j.xcrp.2024.101801.",
+            "journal-title": "Cell Rep Phys Sci"
+        },
+        {
+            "key": "6177_CR63",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.mtbio.2025.101486",
+            "volume": "31",
+            "author": "Y Qiu",
+            "year": "2025",
+            "unstructured": "Qiu Y, Qiu Y, Zhou W, Lu D, Wang H, Li B, Liu B, Wang W. Advancements in functional tetrahedral DNA nanostructures for multi-biomarker biosensing: applications in disease diagnosis, food safety, and environmental monitoring. Mater Today Bio. 2025;31: 101486. https://doi.org/10.1016/j.mtbio.2025.101486.",
+            "journal-title": "Mater Today Bio"
+        },
+        {
+            "key": "6177_CR64",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1002/admt.202200310",
+            "volume": "7",
+            "author": "S Campuzano",
+            "year": "2022",
+            "unstructured": "Campuzano S, Pedrero M, Barderas R, Pingarrón JM. Empowering electrochemical biosensing through nanostructured or multifunctional nucleic acid or peptide biomaterials. Adv Mater Technol. 2022;7: 2200310. https://doi.org/10.1002/admt.202200310.",
+            "journal-title": "Adv Mater Technol"
+        },
+        {
+            "key": "6177_CR65",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.snb.2019.127166",
+            "volume": "302",
+            "author": "J Jiao",
+            "year": "2020",
+            "unstructured": "Jiao J, Li C, Ning L, Shi L, Wang L, Xiang Y, Li G. Electrochemical detection of circRNAs based on the combination of backsplice junction and duplex-specific nuclease. Sens Actuators B Chem. 2020;302: 127166. https://doi.org/10.1016/j.snb.2019.127166.",
+            "journal-title": "Sens Actuators B Chem"
+        },
+        {
+            "key": "6177_CR66",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.microc.2021.106066",
+            "volume": "164",
+            "author": "D Wu",
+            "year": "2021",
+            "unstructured": "Wu D, Lu H, Wang J, Wu L, Liu L, Yi X, Wang J, Tang H. Amplified electrochemical detection of circular RNA in breast cancer patients using ferrocene-capped gold nanoparticle/streptavidin conjugates. Microchem J. 2021;164: 106066. https://doi.org/10.1016/j.microc.2021.106066.",
+            "journal-title": "Microchem J"
+        },
+        {
+            "key": "6177_CR67",
+            "doi-asserted-by": "publisher",
+            "first-page": "17769",
+            "DOI": "10.1039/d1ra01033f",
+            "volume": "11",
+            "author": "B Zhang",
+            "year": "2021",
+            "unstructured": "Zhang B, Liang Y, Bo L, Chen M, Huang B, Cao Q, Wei J, Li T, Cai X, Ye X. A PCR-free screen-printed magnetic electrode for the detection of circular RNA from hepatocellular cancer based on a back-splice junction. RSC Adv. 2021;11:17769–74. https://doi.org/10.1039/d1ra01033f.",
+            "journal-title": "RSC Adv"
+        },
+        {
+            "key": "6177_CR68",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2021.113500",
+            "volume": "192",
+            "author": "B Zhang",
+            "year": "2021",
+            "unstructured": "Zhang B, Chen M, Cao J, Liang Y, Tu T, Hu J, Li T, Cai Y, Li S, Liu B, Xu J, Liang B, Ye X, Cai X. An integrated electrochemical POCT platform for ultrasensitive circRNA detection towards hepatocellular carcinoma diagnosis. Biosens Bioelectron. 2021;192: 113500. https://doi.org/10.1016/j.bios.2021.113500.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR69",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2022.114982",
+            "volume": "222",
+            "author": "L Cheng",
+            "year": "2023",
+            "unstructured": "Cheng L, Yang F, Zhao Y, Liu Z, Yao X, Zhang J. Tetrahedron supported CRISPR/Cas13a cleavage for electrochemical detection of circular RNA in bladder cancer. Biosens Bioelectron. 2023;222: 114982. https://doi.org/10.1016/j.bios.2022.114982.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR70",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.microc.2024.111631",
+            "volume": "206",
+            "author": "R Tian",
+            "year": "2024",
+            "unstructured": "Tian R, Ma W, Liang L, Yin Y, Weng T, He S, Fang S, Huo D, Xie W, Hou C, Wang D. Covalent organic frameworks-based bimetal nanomaterials and three-enzymes reaction for ultrasensitively electrochemical detection of circRNA. Microchem J. 2024;206: 111631. https://doi.org/10.1016/j.microc.2024.111631.",
+            "journal-title": "Microchem J"
+        },
+        {
+            "key": "6177_CR71",
+            "doi-asserted-by": "publisher",
+            "first-page": "1270",
+            "DOI": "10.1021/acssensors.4c03180",
+            "volume": "10",
+            "author": "X Yuan",
+            "year": "2025",
+            "unstructured": "Yuan X, Geng W, Ji J, Yan Z, Wei J, Wu Y, Yang R. CRISPR/Cas13a-programmed Cu NCs and Z-scheme T-COF/Ag2S for photoelectrochemical biosensing of circRNA. ACS Sens. 2025;10:1270–9. https://doi.org/10.1021/acssensors.4c03180.",
+            "journal-title": "ACS Sens"
+        },
+        {
+            "key": "6177_CR72",
+            "doi-asserted-by": "publisher",
+            "first-page": "7516",
+            "DOI": "10.1038/s41598-020-64485-4",
+            "volume": "10",
+            "author": "H McArdle",
+            "year": "2020",
+            "unstructured": "McArdle H, Hogg MC, Bauer S, Rosenow F, Prehn JH, Adamson K, Henshall DC, Spain E. Quantification of tRNA fragments by electrochemical direct detection in small volume biofluid samples. Sci Rep. 2020;10:7516. https://doi.org/10.1038/s41598-020-64485-4.",
+            "journal-title": "Sci Rep"
+        },
+        {
+            "key": "6177_CR73",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.snb.2025.137693",
+            "volume": "436",
+            "author": "X Xie",
+            "year": "2025",
+            "unstructured": "Xie X, Dong C, Liu J, Lin L, Jiang J, Hei J, Wang X, Wu L, Xia Y, Huang Y, Shi L. A dual-signal amplification strategy for electrochemical biosensing of transfer RNA-derived fragments targeting drug-resistant liver cancer. Sens Actuators B Chem. 2025;436: 137693. https://doi.org/10.1016/j.snb.2025.137693.",
+            "journal-title": "Sens Actuators B Chem"
+        },
+        {
+            "key": "6177_CR74",
+            "doi-asserted-by": "publisher",
+            "first-page": "1140",
+            "DOI": "10.1038/s41551-020-00603-x",
+            "volume": "4",
+            "author": "M Patchsung",
+            "year": "2020",
+            "unstructured": "Patchsung M, Jantarug K, Pattama A, Aphicho K, Suraritdechachai S, Meesawat P, Sappakhaw K, Leelahakorn N, Ruenkam T, Wongsatit T, Athipanyasilp N, Eiamthong B, Lakkanasirorat B, Phoodokmai T, Niljianskul N, Pakotiprapha D, Chanarat S, Homchan A, Tinikul R, Kamutira P, Phiwkaow K, Soithongcharoen S, Kantiwiriyawanitch C, Pongsupasa V, Trisrivirat D, Jaroensuk J, Wongnate T, Maenpuen S, Chaiyen P, Kamnerdnakta S, Swangsri J, Chuthapisith S, Sirivatanauksorn Y, Chaimayo C, Sutthent R, Kantakamalakul W, Joung J, Ladha A, Jin X, Gootenberg JS, Abudayyeh OO, Zhang F, Horthongkham N, Uttamapinant C. Clinical validation of a Cas13-based assay for the detection of SARS-CoV-2 RNA. Nat Biomed Eng. 2020;4:1140–9. https://doi.org/10.1038/s41551-020-00603-x.",
+            "journal-title": "Nat Biomed Eng"
+        },
+        {
+            "key": "6177_CR75",
+            "doi-asserted-by": "publisher",
+            "first-page": "632646",
+            "DOI": "10.3389/fcimb.2021.632646",
+            "volume": "11",
+            "author": "I Azmi",
+            "year": "2021",
+            "unstructured": "Azmi I, Faizan MI, Kumar R, Yadav SR, Chaudhary N, Kumar Singh D, Butola R, Ganotra A, Joshi GD, Jhingan GD, Iqbal J, Joshi MC, Ahmad T. A saliva-based RNA extraction-free workflow integrated with Cas13a for SARS-CoV-2 detection. Front Cell Infect Microbiol. 2021;11:632646. https://doi.org/10.3389/fcimb.2021.632646.",
+            "journal-title": "Front Cell Infect Microbiol"
+        },
+        {
+            "key": "6177_CR76",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.aca.2024.342492",
+            "volume": "1302",
+            "author": "N Zhu",
+            "year": "2024",
+            "unstructured": "Zhu N, Wang K, Xiong D, Xiao J, Deng Y, Yang Z, Zhang Z. Efficient DNA walker guided by ordered cruciform-shaped DNA track for ultrasensitive and rapid electrochemical detection of lead ion. Anal Chim Acta. 2024;1302: 342492. https://doi.org/10.1016/j.aca.2024.342492.",
+            "journal-title": "Anal Chim Acta"
+        },
+        {
+            "key": "6177_CR77",
+            "doi-asserted-by": "publisher",
+            "first-page": "5748",
+            "DOI": "10.1021/acssensors.4c02251",
+            "volume": "9",
+            "author": "X Yao",
+            "year": "2024",
+            "unstructured": "Yao X, Wang L, Luo J, Zhang C, Li Y. Multipedal DNA walker: engineering strategy, biosensing application and future perspectives. ACS Sens. 2024;9:5748–62. https://doi.org/10.1021/acssensors.4c02251.",
+            "journal-title": "ACS Sens"
+        },
+        {
+            "key": "6177_CR78",
+            "doi-asserted-by": "publisher",
+            "first-page": "4467",
+            "DOI": "10.1021/acs.nanolett.5b00852",
+            "volume": "15",
+            "author": "A Porchetta",
+            "year": "2015",
+            "unstructured": "Porchetta A, Idili A, Vallée-Bélisle A, Ricci F. General strategy to introduce pH-induced allostery in DNA-based receptors to achieve controlled release of ligands. Nano Lett. 2015;15:4467–71. https://doi.org/10.1021/acs.nanolett.5b00852.",
+            "journal-title": "Nano Lett"
+        },
+        {
+            "key": "6177_CR79",
+            "doi-asserted-by": "publisher",
+            "first-page": "443",
+            "DOI": "10.1080/10408347.2016.1143347",
+            "volume": "46",
+            "author": "JJ Alba",
+            "year": "2016",
+            "unstructured": "Alba JJ, Sadurn A, Gargallo R. Nucleic acid i-motif structures in analytical chemistry. Crit Rev Anal Chem. 2016;46:443–54. https://doi.org/10.1080/10408347.2016.1143347.",
+            "journal-title": "Crit Rev Anal Chem"
+        },
+        {
+            "key": "6177_CR80",
+            "doi-asserted-by": "publisher",
+            "first-page": "5217",
+            "DOI": "10.1007/s00216-022-04058-8",
+            "volume": "414",
+            "author": "PY Lin",
+            "year": "2022",
+            "unstructured": "Lin PY, Chi R, Wu YL, Ho JAA. Applications of triplex DNA nanostructures in sensor development. Anal Bioanal Chem. 2022;414:5217–37. https://doi.org/10.1007/s00216-022-04058-8.",
+            "journal-title": "Anal Bioanal Chem"
+        },
+        {
+            "key": "6177_CR81",
+            "doi-asserted-by": "publisher",
+            "first-page": "2050",
+            "DOI": "10.1016/j.jcis.2021.10.139",
+            "volume": "608",
+            "author": "J Feng",
+            "year": "2022",
+            "unstructured": "Feng J, Yao T, Chu C, Ma Z, Han H. Proton-responsive annunciator based on i-motif DNA structure modified metal organic frameworks for ameliorative construction of electrochemical immunosensing interface. J Colloid Interface Sci. 2022;608:2050–7. https://doi.org/10.1016/j.jcis.2021.10.139.",
+            "journal-title": "J Colloid Interface Sci"
+        },
+        {
+            "key": "6177_CR82",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.clim.2023.109763",
+            "volume": "255",
+            "author": "DM Spencer",
+            "year": "2023",
+            "unstructured": "Spencer DM, Svenungsson E, Gunnarsson I, Caricchio R, Pisetsky DS. The expression of antibodies to Z-DNA in the blood of patients with systemic lupus erythematosus: relationship to autoantibodies to B-DNA. Clin Immunol. 2023;255: 109763. https://doi.org/10.1016/j.clim.2023.109763.",
+            "journal-title": "Clin Immunol"
+        },
+        {
+            "key": "6177_CR83",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.3390/molecules27123706",
+            "volume": "27",
+            "author": "L Li",
+            "year": "2022",
+            "unstructured": "Li L, An R, Liang X. Construction of ssdna-attached lr-chimera involving Z-DNA for ZBP1 binding analysis. Molecules. 2022;27: 3706. https://doi.org/10.3390/molecules27123706.",
+            "journal-title": "Molecules"
+        },
+        {
+            "key": "6177_CR84",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.coelec.2021.100812",
+            "volume": "30",
+            "author": "J Dejeu",
+            "year": "2021",
+            "unstructured": "Dejeu J, van Der Heyden A, Spinelli N, Defrancq E, Coche-Guérente L. Recent progress in the design of G-quadruplex–based electrochemical aptasensors. Curr Opin Electrochem. 2021;30: 100812. https://doi.org/10.1016/j.coelec.2021.100812.",
+            "journal-title": "Curr Opin Electrochem"
+        },
+        {
+            "key": "6177_CR85",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.ab.2021.114149",
+            "volume": "620",
+            "author": "K Shahsavar",
+            "year": "2021",
+            "unstructured": "Shahsavar K, Hosseini M, Shokri E, Xu G. New insight into G-quadruplexes; diagnosis application in cancer. Anal Biochem. 2021;620: 114149. https://doi.org/10.1016/j.ab.2021.114149.",
+            "journal-title": "Anal Biochem"
+        },
+        {
+            "key": "6177_CR86",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1021/acssynbio.5c00074",
+            "author": "A Nair",
+            "year": "2025",
+            "unstructured": "Nair A, Samanta A, Hazra S. Revolutionizing DNAzyme biosensors: pioneering strategies, advanced immobilization, versatile applications, and future frontiers. ACS Synth Biol. 2025. https://doi.org/10.1021/acssynbio.5c00074.",
+            "journal-title": "ACS Synth Biol"
+        },
+        {
+            "key": "6177_CR87",
+            "doi-asserted-by": "publisher",
+            "first-page": "2905663",
+            "DOI": "10.1155/2022/2905663",
+            "volume": "2022",
+            "author": "W Gu",
+            "year": "2022",
+            "unstructured": "Gu W, Lin Z, Zhao S, Wang G, Shen Z, Liu W, Cai Y, Wang K, Wan CC, Yan T. Research progress on G-quadruplexes in human telomeres and tuman telomerase reverse transcriptase (hTERT) promoter. Oxid Med Cell Longev. 2022;2022:2905663. https://doi.org/10.1155/2022/2905663.",
+            "journal-title": "Oxid Med Cell Longev"
+        },
+        {
+            "key": "6177_CR88",
+            "doi-asserted-by": "publisher",
+            "first-page": "659",
+            "DOI": "10.1007/s00775-021-01881-9",
+            "volume": "26",
+            "author": "D Escher",
+            "year": "2021",
+            "unstructured": "Escher D, Hossain MN, Kraatz HB, Müller J. Metal-dependent electrochemical discrimination of DNA quadruplex sequences. J Biol Inorg Chem. 2021;26:659–66. https://doi.org/10.1007/s00775-021-01881-9.",
+            "journal-title": "J Biol Inorg Chem"
+        },
+        {
+            "key": "6177_CR89",
+            "doi-asserted-by": "publisher",
+            "first-page": "19560",
+            "DOI": "10.1021/acs.analchem.5c02715",
+            "volume": "97",
+            "author": "A Cabrero-Martín",
+            "year": "2025",
+            "unstructured": "Cabrero-Martín A, Ruiz-Valdepeñas Montiel V, Torrente-Rodríguez RM, Povedano E, Velázquez-Gutiérrez J, Garranzo-Asensio M, Pingarrón JM, Barderas R, Campuzano S. An electroanalytical approach for advancing cancer diagnosis and therapy by tracking globally DNA G-quadruplex non-canonical structures. Anal Chem. 2025;97:19560. https://doi.org/10.1021/acs.analchem.5c02715.",
+            "journal-title": "Anal Chem"
+        },
+        {
+            "key": "6177_CR90",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2019.111838",
+            "volume": "149",
+            "author": "P Ling",
+            "year": "2020",
+            "unstructured": "Ling P, Qian C, Yu J, Gao F. Artificial nanozyme based on platinum nanoparticles anchored metal-organic frameworks with enhanced electrocatalytic activity for detection of telomeres activity. Biosens Bioelectron. 2020;149: 111838. https://doi.org/10.1016/j.bios.2019.111838.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR91",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2019.111834",
+            "volume": "148",
+            "author": "L Wang",
+            "year": "2020",
+            "unstructured": "Wang L, Meng T, Zhao D, Jia H, An S, Yang X, et al. An enzyme-free electrochemical biosensor based on well monodisperse Au nanorods for ultra-sensitive detection of telomerase activity. Biosens Bioelectron. 2020;148: 111834. https://doi.org/10.1016/j.bios.2019.111834.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR92",
+            "doi-asserted-by": "publisher",
+            "first-page": "97",
+            "DOI": "10.1007/s00604-019-4095-0",
+            "volume": "187",
+            "author": "Y Shen",
+            "year": "2020",
+            "unstructured": "Shen Y, Gong J, Xu Q, Zhou L, Sheng J. Target induced framework nucleic acid nanomachine with doxorubicin-spherical nucleic acid tags for electrochemical determination of human telomerase activity. Microchim Acta. 2020;187:97. https://doi.org/10.1007/s00604-019-4095-0.",
+            "journal-title": "Microchim Acta"
+        },
+        {
+            "key": "6177_CR93",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.jelechem.2020.114633",
+            "volume": "877",
+            "author": "Y Wang",
+            "year": "2020",
+            "unstructured": "Wang Y, Cai Y-J, Liang R-P, Qiu j-D. Electrochemical biosensor for telomerase activity assay based on HCR and dual interaction of the poly-adenine DNA with Au electrode and Ce-Ti dioxide nanorods. J Electroanal Chem. 2020;877: 114633. https://doi.org/10.1016/j.jelechem.2020.114633.",
+            "journal-title": "J Electroanal Chem"
+        },
+        {
+            "key": "6177_CR94",
+            "doi-asserted-by": "publisher",
+            "first-page": "129659",
+            "DOI": "10.1016/j.snb.2021.129659",
+            "volume": "334",
+            "author": "L Liu",
+            "year": "2021",
+            "unstructured": "Liu L, Wu D, Zhen S, Lu S, Yi X, Sun Z. Electrochemical detection of telomerase in cancer cells based on the in-situ formation of streptavidin-biotin-DNA-biotin networks for signal amplification. Sens Actuators B Chem. 2021;334:129659. https://doi.org/10.1016/j.snb.2021.129659.",
+            "journal-title": "Sens Actuators B Chem"
+        },
+        {
+            "key": "6177_CR95",
+            "doi-asserted-by": "publisher",
+            "first-page": "339036",
+            "DOI": "10.1016/j.aca.2021.339036",
+            "volume": "1184",
+            "author": "Y Wang",
+            "year": "2021",
+            "unstructured": "Wang Y, Dong P, Huang J, Xu H, Lei J, Zhang L. Direct electrochemistry of silver nanoparticles-decorated metal-organic frameworks for telomerase activity sensing via allosteric activation of an aptamer hairpin. Anal Chim Acta. 2021;1184:339036. https://doi.org/10.1016/j.aca.2021.339036.",
+            "journal-title": "Anal Chim Acta"
+        },
+        {
+            "key": "6177_CR96",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.talanta.2020.121957",
+            "volume": "225",
+            "author": "H Jia",
+            "year": "2021",
+            "unstructured": "Jia H, Shang N, He X, Nsabimana A, Sun D, Wang H, et al. Epoxy-functionalized macroporous carbon with embedded platinum nanoparticles for electrochemical detection of telomerase activity via telomerase-triggered catalytic hairpin assembly. Talanta. 2021;225: 121957. https://doi.org/10.1016/j.talanta.2020.121957.",
+            "journal-title": "Talanta"
+        },
+        {
+            "key": "6177_CR97",
+            "doi-asserted-by": "publisher",
+            "first-page": "9964",
+            "DOI": "10.1021/acsomega.2c00713",
+            "volume": "7",
+            "author": "R Díaz-Ayala",
+            "year": "2022",
+            "unstructured": "Díaz-Ayala R, López-Nieves M, Berlingeri ESC, Cabrera CR, Cunci L, González CI, Escobar PF. Test strip platform spin-off for telomerase activity detection: development of an electrochemical biosensor. ACS Omega. 2022;7:9964–72. https://doi.org/10.1021/acsomega.2c00713.",
+            "journal-title": "ACS Omega"
+        },
+        {
+            "key": "6177_CR98",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.jelechem.2023.117749",
+            "volume": "946",
+            "author": "S Lv",
+            "year": "2023",
+            "unstructured": "Lv S, Shi R, Yan R, Miao P. Highly sensitive detection of telomerase based on poly-adenine primer and DNA-templated copper nanoparticles. J Electroanal Chem. 2023;946: 117749. https://doi.org/10.1016/j.jelechem.2023.117749.",
+            "journal-title": "J Electroanal Chem"
+        },
+        {
+            "key": "6177_CR99",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.talanta.2022.123597",
+            "volume": "253",
+            "author": "L Liu",
+            "year": "2023",
+            "unstructured": "Liu L, Chang Y, Ji X, Chen J, Zhang M, Yang S. Surface-tethered electrochemical biosensor for telomerase detection by integration of homogeneous extension and hybridization reactions. Talanta. 2023;253: 123597. https://doi.org/10.1016/j.talanta.2022.123597.",
+            "journal-title": "Talanta"
+        },
+        {
+            "key": "6177_CR100",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.microc.2023.108649",
+            "volume": "190",
+            "author": "F Kohansal",
+            "year": "2023",
+            "unstructured": "Kohansal F, Mobed A, Aletaha N, Ghaseminasab K, Dolati S, Hasanzadeh M. Biosensing of telomerase antigen using sandwich type immunosensor based on poly(β-Cyclodextrin) decorated by Au@Pt nanoparticles: an innovative immune-platform toward early-stage identification of cancer. Microchem J. 2023;190: 108649. https://doi.org/10.1016/j.microc.2023.108649.",
+            "journal-title": "Microchem J"
+        },
+        {
+            "key": "6177_CR101",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.aca.2023.340884",
+            "volume": "1248",
+            "author": "Y Sun",
+            "year": "2023",
+            "unstructured": "Sun Y, Dong Q, Yang H, Song W, Zhou H. CuS quantum dots activated DNAzyme for ratiometric electrochemical detection of telomerase activity. Anal Chim Acta. 2023;1248: 340884. https://doi.org/10.1016/j.aca.2023.340884.",
+            "journal-title": "Anal Chim Acta"
+        },
+        {
+            "key": "6177_CR102",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.colsurfa.2022.130602",
+            "volume": "658",
+            "author": "Y Jia",
+            "year": "2023",
+            "unstructured": "Jia Y, Hao L, Zhang J, Zhang X, An S, Su M, et al. An enzyme-free and PCR-free biosensing platform for accurate monitoring of telomerase activity. Colloids Surf A Physicochem Eng Asp. 2023;658: 130602. https://doi.org/10.1016/j.colsurfa.2022.130602.",
+            "journal-title": "Colloids Surf A Physicochem Eng Asp"
+        },
+        {
+            "key": "6177_CR103",
+            "doi-asserted-by": "publisher",
+            "first-page": "947",
+            "DOI": "10.1021/acsmaterialslett.4c02414",
+            "volume": "7",
+            "author": "X Chen",
+            "year": "2025",
+            "unstructured": "Chen X, Guo J, Chai H, Tang Y, Miao P. Telomerase triggered strand displacement cycles at DNA tetrahedron layer for highly sensitive electrochemical biosensing. ACS Mater Lett. 2025;7:947–53. https://doi.org/10.1021/acsmaterialslett.4c02414.",
+            "journal-title": "ACS Mater Lett"
+        },
+        {
+            "key": "6177_CR104",
+            "doi-asserted-by": "publisher",
+            "DOI": "10.1016/j.bios.2024.117042",
+            "volume": "271",
+            "author": "M Wang",
+            "year": "2025",
+            "unstructured": "Wang M, Chen W, Li M, Lin F, Zhong J, Ouyang W, Cai C, Zeng G, Liu H. TE-RPA: One-tube telomerase extension recombinase polymerase amplification-based electrochemical biosensor for precise diagnosis of urothelial carcinoma. Biosens Bioelectron. 2025;271: 117042. https://doi.org/10.1016/j.bios.2024.117042.",
+            "journal-title": "Biosens Bioelectron"
+        },
+        {
+            "key": "6177_CR105",
+            "doi-asserted-by": "publisher",
+            "first-page": "1796",
+            "DOI": "10.1039/C5CC09800A",
+            "volume": "52",
+            "author": "Y Liu",
+            "year": "2016",
+            "unstructured": "Liu Y, Wei M, Liu X, Wei W, Zhao H, Zhang Y, Liu S. Label-free ultrasensitive detection of telomerase activity via multiple telomeric hemin/G-quadruplex triggered polyaniline deposition and a DNA tetrahedron-structure regulated signal. Chem Commun. 2016;52:1796–9. https://doi.org/10.1039/C5CC09800A.",
+            "journal-title": "Chem Commun"
+        },
+        {
+            "key": "6177_CR106",
+            "doi-asserted-by": "publisher",
+            "first-page": "347",
+            "DOI": "10.1016/j.bios.2016.12.054",
+            "volume": "91",
+            "author": "X Liu",
+            "year": "2017",
+            "unstructured": "Liu X, Wei M, Xu E, Yang H, Wei W, Zhang Y, Liu S. A sensitive, label-free electrochemical detection of telomerase activity without modification or immobilization. Biosens Bioelectron. 2017;91:347–53. https://doi.org/10.1016/j.bios.2016.12.054.",
+            "journal-title": "Biosens Bioelectron"
+        }
+    ],
+    "container-title": "Analytical and Bioanalytical Chemistry",
+    "original-title": [],
+    "language": "en",
+    "link": [
+        {
+            "URL": "https://link.springer.com/content/pdf/10.1007/s00216-025-06177-4.pdf",
+            "content-type": "application/pdf",
+            "content-version": "vor",
+            "intended-application": "text-mining"
+        },
+        {
+            "URL": "https://link.springer.com/article/10.1007/s00216-025-06177-4",
+            "content-type": "text/html",
+            "content-version": "vor",
+            "intended-application": "text-mining"
+        },
+        {
+            "URL": "https://link.springer.com/content/pdf/10.1007/s00216-025-06177-4.pdf",
+            "content-type": "application/pdf",
+            "content-version": "vor",
+            "intended-application": "similarity-checking"
+        }
+    ],
+    "deposited": {
+        "date-parts": [
+            [
+                2026,
+                1,
+                8
+            ]
+        ],
+        "date-time": "2026-01-08T13:36:16Z",
+        "timestamp": 1767879376000
+    },
+    "score": 1,
+    "resource": {
+        "primary": {
+            "URL": "https://link.springer.com/10.1007/s00216-025-06177-4"
+        }
+    },
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+        "date-parts": [
+            [
+                2025,
+                11,
+                1
+            ]
+        ]
+    },
+    "references-count": 106,
+    "journal-issue": {
+        "issue": "2",
+        "published-print": {
+            "date-parts": [
+                [
+                    2026,
+                    1
+                ]
+            ]
+        }
+    },
+    "alternative-id": [
+        "6177"
+    ],
+    "URL": "http://dx.doi.org/10.1007/s00216-025-06177-4",
+    "relation": {},
+    "ISSN": [
+        "1618-2642",
+        "1618-2650"
+    ],
+    "subject": [],
+    "container-title-short": "Anal Bioanal Chem",
+    "published": {
+        "date-parts": [
+            [
+                2025,
+                11,
+                1
+            ]
+        ]
+    },
+    "assertion": [
+        {
+            "value": "28 July 2025",
+            "order": 1,
+            "name": "received",
+            "label": "Received",
+            "group": {
+                "name": "ArticleHistory",
+                "label": "Article History"
+            }
+        },
+        {
+            "value": "6 October 2025",
+            "order": 2,
+            "name": "revised",
+            "label": "Revised",
+            "group": {
+                "name": "ArticleHistory",
+                "label": "Article History"
+            }
+        },
+        {
+            "value": "9 October 2025",
+            "order": 3,
+            "name": "accepted",
+            "label": "Accepted",
+            "group": {
+                "name": "ArticleHistory",
+                "label": "Article History"
+            }
+        },
+        {
+            "value": "1 November 2025",
+            "order": 4,
+            "name": "first_online",
+            "label": "First Online",
+            "group": {
+                "name": "ArticleHistory",
+                "label": "Article History"
+            }
+        },
+        {
+            "order": 1,
+            "name": "Ethics",
+            "group": {
+                "name": "EthicsHeading",
+                "label": "Declarations"
+            }
+        },
+        {
+            "value": "Susana Campuzano is editor of Analytical and Bioanalytical Chemistry but was not involved in the peer review of this article. The other authors declare no conflict of interest.",
+            "order": 2,
+            "name": "Ethics",
+            "group": {
+                "name": "EthicsHeading",
+                "label": "Conflict of interest"
+            }
+        }
+    ]
+}
