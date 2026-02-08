@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Drawer, Typography, Box, TextField, Button, Divider, IconButton,
-    CircularProgress, Tooltip, Select, MenuItem, FormControl, InputLabel,
+    CircularProgress, Tooltip, Select, MenuItem, FormControl,
     List, ListItem, ListItemText, ListItemButton, Popover, Menu
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CopyIcon from '@mui/icons-material/ContentCopy';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // For menu maybe
-import MoreVertIcon from '@mui/icons-material/MoreVert'; // context menu
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
@@ -385,10 +382,6 @@ const RightSidebar: React.FC = () => {
             setMessages(prev => [...prev, { role: 'system', content: `Error: ${error}` }]);
             setIsLoading(false);
         }
-    };
-
-    const handleClear = () => {
-        setMessages([]);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {

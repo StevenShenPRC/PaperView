@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import katex from 'katex';
-import { Menu, MenuItem, Tooltip, Box, Typography } from '@mui/material';
+import { Menu, MenuItem, Tooltip, Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 interface InteractiveMathProps {

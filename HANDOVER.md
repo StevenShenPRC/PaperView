@@ -70,6 +70,8 @@ PaperView 是一个论文同步与管理系统，允许用户从浏览器捕捉�
     -   曾出现 `STATUS_CONTROL_C_EXIT` 错误，若后端无故退出请检查日志。
     -   **i18n 提取**: `package.json` 中已更新 `i18n:extract` 脚本，显式指定 `--config i18next-parser.config.cjs`。配置已重命名为 `.cjs` 以兼容 ES Module 项目。
 
+5.  **模型设置完后刷新RightSidebar**
+
 ## 注意事项
 
 -   开发环境 Vite 配置禁用了 `fs.strict` 以兼容 OneDrive 等路径结构。
