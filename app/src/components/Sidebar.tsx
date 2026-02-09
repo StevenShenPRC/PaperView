@@ -13,6 +13,12 @@ import {
 import { Batch } from '../types';
 
 import { useTranslation } from 'react-i18next';
+import logoLight from '../assets/logo.svg';
+import logoDark from '../assets/logo_dark.svg';
+import { useTheme } from '@mui/material/styles';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import store from '../store';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     batches: Batch[];
@@ -31,6 +37,23 @@ const Sidebar: React.FC<SidebarProps> = ({
     collapsed, onToggleCollapse
 }) => {
     const { t } = useTranslation();
+    const theme = useTheme();
+    const [port, setPort] = useState(8080);
+
+    useEffect(() => {
+        store.get<number>('server_port').then(p => {
+            if (p) setPort(p);
+        });
+    }, []);
+
+    const handleInstallScript = async () => {
+        const url = `http://localhost:${port}/paperview.user.js`;
+        try {
+            await openUrl(url);
+        } catch (e) {
+            console.error("Failed to open script url", e);
+        }
+    };
 
     return (
         <Drawer
@@ -56,9 +79,16 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
             <Box sx={{ p: 1, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
                 {!collapsed && (
-                    <Typography variant="h6" sx={{ ml: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        PaperView
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, overflow: 'hidden' }}>
+                        <img
+                            src={theme.palette.mode === 'dark' ? logoDark : logoLight}
+                            alt="Logo"
+                            style={{ height: '32px', marginRight: '10px' }}
+                        />
+                        <Typography variant="h6" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            PaperView
+                        </Typography>
+                    </Box>
                 )}
                 <IconButton onClick={onToggleCollapse}>
                     {collapsed ? <MenuIcon /> : <ChevronLeftIcon />}
@@ -130,6 +160,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </>
                 )}
             </Box>
+
+            <Divider />
+
+
+
+            <List>
+                {/* Install Script Link */}
+                <ListItem key="install-script" disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                        sx={{
+                            minHeight: 48,
+                            justifyContent: collapsed ? 'center' : 'initial',
+                            px: 2.5,
+                        }}
+                        onClick={handleInstallScript}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 0,
+                                mr: collapsed ? 'auto' : 3,
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Box sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>JS</Box>
+                        </ListItemIcon>
+                        <ListItemText primary={t('app.install_script') || "Install Script"} sx={{ opacity: collapsed ? 0 : 1 }} />
+                    </ListItemButton>
+                </ListItem>
+            </List>
 
             <Divider />
 

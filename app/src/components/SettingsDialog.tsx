@@ -71,6 +71,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             const proxy_url = await store.get<string>('proxy_url') || '';
             const ai_providers = await store.get<any[]>('ai_providers') || [];
             const active_ai_provider = await store.get<string>('active_ai_provider') || '';
+            const server_port = await store.get<number>('server_port') || 8080;
             // theme_mode is passed via props for now, but we should sync it
 
             setSettings({
@@ -78,7 +79,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                 proxy_url,
                 ai_providers,
                 active_ai_provider,
-                theme_mode: mode
+                theme_mode: mode,
+                server_port
             });
         } catch (e) {
             console.error('Failed to load settings', e);
@@ -87,11 +89,21 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
 
     const handleSave = async () => {
         try {
+            // Check if port changed
+            const oldPort = await store.get<number>('server_port');
+            const portChanged = oldPort !== settings.server_port;
+
             await store.set('proxy_mode', settings.proxy_mode);
             await store.set('proxy_url', settings.proxy_url);
             await store.set('ai_providers', settings.ai_providers);
             await store.set('active_ai_provider', settings.active_ai_provider);
+            await store.set('server_port', settings.server_port);
             await store.save();
+
+            if (portChanged) {
+                alert(t('app.restart_required_alert') || "Port changed. Please restart the application for changes to take effect.");
+            }
+
             onClose();
         } catch (e) {
             console.error('Failed to save settings', e);
@@ -189,18 +201,38 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                             <TextField
                                 label={t('app.host')}
-                                defaultValue="127.0.0.1"
+                                defaultValue="0.0.0.0"
                                 InputProps={{ readOnly: true }}
                                 variant="outlined"
                                 size="small"
                             />
                             <TextField
                                 label={t('app.port')}
-                                defaultValue="8080"
-                                InputProps={{ readOnly: true }}
+                                value={settings.server_port || 8080}
+                                onChange={(e) => setSettings({ ...settings, server_port: parseInt(e.target.value) || 8080 })}
                                 variant="outlined"
                                 size="small"
+                                type="number"
+                                helperText={t('app.restart_required_note') || "Restart required to apply changes"}
                             />
+                        </Box>
+
+                        <Box sx={{ mt: 3 }}>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => {
+                                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settings, null, 2));
+                                    const downloadAnchorNode = document.createElement('a');
+                                    downloadAnchorNode.setAttribute("href", dataStr);
+                                    downloadAnchorNode.setAttribute("download", "paperview_config.json");
+                                    document.body.appendChild(downloadAnchorNode);
+                                    downloadAnchorNode.click();
+                                    downloadAnchorNode.remove();
+                                }}
+                            >
+                                {t('app.export_config') || "Export Configuration"}
+                            </Button>
                         </Box>
                     </Box>
                 </CustomTabPanel>

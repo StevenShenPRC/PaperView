@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="main-icon" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 500 500">
+  <!-- Generator: Adobe Illustrator 29.1.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 142)  -->
+  <defs>
+    <style>
+      .st0 {
+        stroke: #cbd5e1;
+        stroke-width: 10px;
+      }
+
+      .st0, .st1, .st2 {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .st0, .st3 {
+        stroke-miterlimit: 10;
+      }
+
+      .st1 {
+        stroke: #10b981;
+      }
+
+      .st1, .st2 {
+        stroke-linejoin: round;
+        stroke-width: 45px;
+      }
+
+      .st3 {
+        fill: #f8fafc;
+        stroke: #e2e8f0;
+        stroke-width: 5px;
+      }
+
+      .st2 {
+        stroke: url(#_新建渐变色板_1);
+      }
+    </style>
+    <linearGradient id="_新建渐变色板_1" data-name="新建渐变色板 1" x1="-65.9" y1="4.8" x2="-64.9" y2="5.8" gradientTransform="translate(11659 -1075.6) scale(175 250.5)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e40af"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect class="st3" x="72.8" y="37.4" width="354.3" height="425.2" rx="30" ry="30"/>
+  <g id="_模拟文字">
+    <line class="st0" x1="115.2" y1="319.5" x2="323" y2="319.5"/>
+    <line class="st0" x1="115.2" y1="226.8" x2="349.4" y2="226.8"/>
+    <line class="st0" x1="115.2" y1="273.2" x2="219.1" y2="273.2"/>
+    <line class="st0" x1="115.2" y1="180.5" x2="268.2" y2="180.5"/>
+    <line class="st0" x1="115.2" y1="87.9" x2="384.8" y2="87.9"/>
+    <line class="st0" x1="115.2" y1="134.2" x2="219.1" y2="134.2"/>
+    <line class="st0" x1="115.2" y1="365.8" x2="366.6" y2="365.8"/>
+    <line class="st0" x1="115.2" y1="412.1" x2="219.1" y2="412.1"/>
+  </g>
+  <path class="st2" d="M147.9,390V113.2c.3,0,164.4-26.5,166.5,73.2-3.2,100.9-166.5,71.7-166.5,71.7"/>
+  <path class="st1" d="M210.9,324.1l49.6,59.2c7.4,8.9,21.1,9,28.7.2l99.7-115.3"/>
+</svg>

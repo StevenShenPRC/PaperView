@@ -23,10 +23,11 @@ pub async fn start_server(port: u16, db_path: String, app_handle: AppHandle) {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/sync", post(sync_data))
+        .route("/paperview.user.js", get(serve_script))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     println!("Listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
@@ -35,6 +36,14 @@ pub async fn start_server(port: u16, db_path: String, app_handle: AppHandle) {
 
 async fn health_check() -> impl IntoResponse {
     (StatusCode::OK, "OK")
+}
+
+async fn serve_script() -> impl IntoResponse {
+    const SCRIPT: &str = include_str!("../assets/paperview.user.js");
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/javascript; charset=utf-8")],
+        SCRIPT
+    )
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

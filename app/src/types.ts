@@ -34,5 +34,6 @@ export interface AppSettings {
     proxy_url?: string;
     ai_providers: AiProvider[];
     active_ai_provider?: string;
+    server_port?: number;
     theme_mode: 'light' | 'dark' | 'system';
 }

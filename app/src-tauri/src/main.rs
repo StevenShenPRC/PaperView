@@ -7,6 +7,7 @@ mod doi;
 mod server;
 mod network;
 mod crawler;
+mod window_icon;
 
 use tauri::{AppHandle, Emitter, State}; // Manager removed
 use tauri_plugin_store::StoreExt;
@@ -448,8 +449,24 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(AppState { db_path: db_path.to_string() })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::ThemeChanged(theme) = event {
+                window_icon::update_window_icon(window, *theme);
+            }
+        })
         .setup(move |app| {
             let app_handle = app.handle().clone();
+            
+            // Read port from settings
+            let store = app.store("settings.json");
+            let mut port = 8080;
+            if let Ok(store) = store {
+                if let Some(p) = store.get("server_port").and_then(|v| v.as_u64()) {
+                    port = p as u16;
+                }
+            }
+            println!("Starting server on port {}", port);
+
             tauri::async_runtime::spawn(async move {
                 server::start_server(port, db_path_str, app_handle).await;
             });

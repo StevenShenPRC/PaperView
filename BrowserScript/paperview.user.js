@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         学术论文同步助手
+// @name         PaperView 伴侣
 // @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  抓取 ScienceDirect 等网站文章并同步至桌面应用
-// @author       Gemini
+// @version      0.0.1-alpha.1
+// @description  PaperView伴侣脚本，批量同步论文信息至桌面APP
+// @author       Steven Shen
 // @match        *://www.sciencedirect.com/*
 // @match        *://*.sciencedirect.com/*
 // @match        *://*.springer.com/*
@@ -236,10 +236,10 @@
     const panel = document.createElement('div');
     panel.id = 'sync-panel';
     panel.innerHTML = `
-        <h3>学术助手同步</h3>
-        <div id="app-status" class="status-bar status-offline">应用状态: 未检测</div>
+        <h3>PaperView 伴侣</h3>
+        <div id="app-status" class="status-bar status-offline">状态: 未检测</div>
         
-        <label for="app-port">应用端口:</label>
+        <label for="app-port">端口:</label>
         <input type="text" id="app-port" value="${getPort()}" placeholder="8080">
         
         <select id="site-select"></select>
