@@ -6,7 +6,8 @@ import Sidebar from './components/Sidebar';
 import RightSidebar from './components/RightSidebar';
 import SettingsDialog from './components/SettingsDialog';
 import PaperList from './components/PaperList';
-import { Batch, Paper } from './types';
+import PDFReader from './components/PDFReader';
+import { Batch, Paper, PaperPdf } from './types';
 import { useTranslation } from 'react-i18next';
 
 import { listen } from '@tauri-apps/api/event';
@@ -192,23 +193,96 @@ function App() {
   };
   */
 
+  const [activePaper, setActivePaper] = useState<Paper | null>(null);
+  const [activePdf, setActivePdf] = useState<PaperPdf | null>(null);
+  const [pdfCollapsed, setPdfCollapsed] = useState(false);
+  const [userSidebarCollapsed, setUserSidebarCollapsed] = useState(true);
+  const [readerWidth, setReaderWidth] = useState(800); // Default width in pixels
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleReadPdf = (paper: Paper, pdf: PaperPdf) => {
+    if (!activePdf || pdfCollapsed) {
+      // Entering reader mode: save current sidebar state and collapse it
+      setUserSidebarCollapsed(sidebarCollapsed);
+      setSidebarCollapsed(true);
+    }
+    setActivePaper(paper);
+    setActivePdf(pdf);
+    setPdfCollapsed(false);
+  };
+
+  // Collapse reader: unmounts PDFReader component (releases resources) but keeps paper/pdf references
+  const handleCollapseReader = () => {
+    setPdfCollapsed(true);
+    // Restore user's manual sidebar state
+    setSidebarCollapsed(userSidebarCollapsed);
+  };
+
+  // Expand reader: re-mounts PDFReader with preserved paper/pdf references
+  const handleExpandReader = () => {
+    setPdfCollapsed(false);
+    setUserSidebarCollapsed(sidebarCollapsed);
+    setSidebarCollapsed(true);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Calculate new width: viewport width - mouse X - RightSidebar width (approx 350)
+      const newWidth = window.innerWidth - e.clientX - 350;
+      if (newWidth > 400 && newWidth < window.innerWidth - 600) {
+        setReaderWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
   return (
-
-
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
         <Sidebar
           batches={batches}
           onSelectBatch={handleSelectBatch}
           selectedBatchId={selectedBatch?.id || null}
           onSettingsClick={() => setSettingsOpen(true)}
           collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onToggleCollapse={() => {
+            setSidebarCollapsed(!sidebarCollapsed);
+            if (!activePdf) {
+              setUserSidebarCollapsed(!sidebarCollapsed);
+            }
+          }}
         />
 
-        <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Box sx={{ flexGrow: 1, overflow: 'hidden', p: 0, display: 'flex', flexDirection: 'column' }}>
+        <Box component="main" sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
+          {/* Paper List Column - shrinks when reader is active */}
+          <Box sx={{
+            flexGrow: (activePdf && !pdfCollapsed) ? 0 : 1,
+            width: (activePdf && !pdfCollapsed) ? `calc(100% - ${readerWidth}px)` : '100%',
+            minWidth: (activePdf && !pdfCollapsed) ? '350px' : 'auto',
+            borderRight: (activePdf && !pdfCollapsed) ? 1 : 0,
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                 <CircularProgress />
@@ -219,7 +293,9 @@ function App() {
                   papers={papers}
                   onUpdateMetadata={handleUpdateMetadata}
                   onTranslate={handleTranslate}
+                  onReadPdf={handleReadPdf}
                   batch={selectedBatch}
+                  readerActive={!!(activePdf && !pdfCollapsed)}
                 />
               ) : (
                 <Box sx={{ p: 3, mt: 5, textAlign: 'center' }}>
@@ -236,9 +312,40 @@ function App() {
               </Box>
             )}
           </Box>
+
+          {/* Resizer Handle */}
+          {activePdf && !pdfCollapsed && (
+            <Box
+              onMouseDown={handleMouseDown}
+              sx={{
+                width: '4px',
+                cursor: 'col-resize',
+                bgcolor: isResizing ? 'primary.main' : 'transparent',
+                '&:hover': { bgcolor: 'primary.light' },
+                transition: 'background-color 0.2s',
+                zIndex: 10,
+              }}
+            />
+          )}
+
+          {/* Reader Column - only rendered when not collapsed (unmounts to release resources) */}
+          {activePaper && activePdf && !pdfCollapsed && (
+            <Box sx={{ width: `${readerWidth}px`, height: '100%', overflow: 'hidden' }}>
+              <PDFReader
+                paper={activePaper}
+                pdf={activePdf}
+                onClose={handleCollapseReader}
+                onPdfChange={(pdf) => setActivePdf(pdf)}
+                isResizing={isResizing}
+              />
+            </Box>
+          )}
         </Box>
 
-        <RightSidebar />
+        <RightSidebar
+          hasCollapsedPdf={!!(activePaper && activePdf && pdfCollapsed)}
+          onExpandReader={handleExpandReader}
+        />
       </Box>
 
       <SettingsDialog

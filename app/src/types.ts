@@ -9,6 +9,16 @@ export interface Paper {
     abstract: string;
     title_cn?: string;
     abstract_cn?: string;
+    local_path?: string;
+    pdfs: PaperPdf[];
+}
+
+export interface PaperPdf {
+    id: number;
+    paper_id: number;
+    filename: string;
+    display_name: string;
+    added_time: string;
 }
 
 export interface Batch {

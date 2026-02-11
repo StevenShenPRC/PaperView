@@ -14,12 +14,21 @@ pub struct Paper {
     pub issue_date: String,
     pub title: String,
     pub doi: String,
-    // Provide a default or rename if needed. "abstract" is a keyword in some contexts but fine as field name in Rust if not keyword.
-    // However, the DB column is 'abstract'.
     #[serde(rename = "abstract")]
     pub abstract_text: String,
     pub title_cn: Option<String>,
     pub abstract_cn: Option<String>,
+    pub local_path: Option<String>,
+    pub pdfs: Vec<PaperPdf>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct PaperPdf {
+    pub id: i64,
+    pub paper_id: i64,
+    pub filename: String,
+    pub display_name: String,
+    pub added_time: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -49,10 +58,37 @@ pub fn init_db<P: AsRef<Path>>(path: P) -> Result<Connection> {
             doi TEXT,
             abstract TEXT,
             title_cn TEXT,
-            abstract_cn TEXT
+            abstract_cn TEXT,
+            local_path TEXT
         )",
         [],
     )?;
+
+    // Migration: add local_path column if it doesn't exist (for existing DBs)
+    let columns: Vec<String> = conn
+        .prepare("PRAGMA table_info(papers)")
+        .and_then(|mut stmt| {
+            stmt.query_map([], |row| row.get::<_, String>(1))
+                .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        })?;
+    if !columns.iter().any(|c| c == "local_path") {
+        conn.execute("ALTER TABLE papers ADD COLUMN local_path TEXT", [])?;
+        println!("[DB Migration] Added local_path column to papers table.");
+    }
+
+    // Multi-PDF support table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS paper_pdfs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            paper_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            added_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (paper_id) REFERENCES papers(id) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+
     Ok(conn)
 }
 
@@ -112,7 +148,7 @@ pub fn get_papers_by_batch(
     date: &str,
 ) -> Result<Vec<Paper>> {
     let mut stmt = conn.prepare(
-        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn
+        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path
          FROM papers 
          WHERE journalName = ? AND issueVolume = ? AND issueDate = ?
          ORDER BY id ASC"
@@ -130,12 +166,16 @@ pub fn get_papers_by_batch(
             abstract_text: row.get(7)?,
             title_cn: row.get(8).ok(),
             abstract_cn: row.get(9).ok(),
+            local_path: row.get(10).ok(),
+            pdfs: vec![],
         })
     })?;
 
     let mut papers = Vec::new();
     for row in rows {
-        papers.push(row?);
+        let mut paper = row?;
+        paper.pdfs = get_pdfs_for_paper(conn, paper.id).unwrap_or_default();
+        papers.push(paper);
     }
 
     Ok(papers)
@@ -156,7 +196,7 @@ pub fn update_paper_metadata(
 
 pub fn get_paper_by_id(conn: &Connection, id: i64) -> Result<Paper> {
     let mut stmt = conn.prepare(
-        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn
+        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path
          FROM papers WHERE id = ?"
     )?;
 
@@ -172,8 +212,62 @@ pub fn get_paper_by_id(conn: &Connection, id: i64) -> Result<Paper> {
             abstract_text: row.get(7)?,
             title_cn: row.get(8).ok(),
             abstract_cn: row.get(9).ok(),
+            local_path: row.get(10).ok(),
+            pdfs: vec![],
         })
     })
+    .map(|mut paper| {
+        paper.pdfs = get_pdfs_for_paper(conn, paper.id).unwrap_or_default();
+        paper
+    })
+}
+
+pub fn update_paper_local_path(conn: &Connection, id: i64, local_path: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE papers SET local_path = ? WHERE id = ?",
+        params![local_path, id],
+    )?;
+    Ok(())
+}
+
+// --- Multi-PDF functions ---
+
+pub fn insert_paper_pdf(
+    conn: &Connection,
+    paper_id: i64,
+    filename: &str,
+    display_name: &str,
+) -> Result<i64> {
+    conn.execute(
+        "INSERT INTO paper_pdfs (paper_id, filename, display_name) VALUES (?, ?, ?)",
+        params![paper_id, filename, display_name],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_pdfs_for_paper(conn: &Connection, paper_id: i64) -> Result<Vec<PaperPdf>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, paper_id, filename, display_name, added_time FROM paper_pdfs WHERE paper_id = ? ORDER BY added_time ASC"
+    )?;
+    let rows = stmt.query_map(params![paper_id], |row| {
+        Ok(PaperPdf {
+            id: row.get(0)?,
+            paper_id: row.get(1)?,
+            filename: row.get(2)?,
+            display_name: row.get(3)?,
+            added_time: row.get(4)?,
+        })
+    })?;
+    let mut pdfs = Vec::new();
+    for row in rows {
+        pdfs.push(row?);
+    }
+    Ok(pdfs)
+}
+
+pub fn delete_paper_pdf(conn: &Connection, pdf_id: i64) -> Result<()> {
+    conn.execute("DELETE FROM paper_pdfs WHERE id = ?", params![pdf_id])?;
+    Ok(())
 }
 
 pub fn update_paper_translation(

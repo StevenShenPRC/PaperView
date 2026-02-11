@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PaperView 伴侣
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1-alpha.1
+// @version      0.0.2-alpha.0
 // @description  PaperView伴侣脚本，批量同步论文信息至桌面APP
 // @author       Steven Shen
 // @match        *://www.sciencedirect.com/*

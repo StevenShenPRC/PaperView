@@ -5,6 +5,7 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafb);
 }
+
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -81,6 +82,7 @@ button {
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
@@ -93,6 +95,66 @@ button {
 
 #greet-input {
   margin-right: 5px;
+}
+
+/* ===== PDF Text Layer: Visual Deception Approach =====
+ * The text layer is an invisible overlay above the canvas.
+ * Text is transparent; selection uses mix-blend-mode to
+ * blend naturally with the rendered PDF underneath.
+ * react-pdf uses both .react-pdf__Page__textContent AND .textLayer */
+
+/* 1. Force transparent text, strip any interfering styles */
+.react-pdf__Page__textContent,
+.react-pdf__Page__textContent span,
+.textLayer,
+.textLayer span {
+  color: transparent !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  line-height: 1 !important;
+}
+
+/* 2. Selection highlight: blend with canvas below */
+.react-pdf__Page__textContent span::selection,
+.textLayer span::selection {
+  background: rgba(0, 100, 255, 0.3) !important;
+  mix-blend-mode: multiply;
+  color: transparent !important;
+}
+
+/* 3. Ensure text layer stacks above canvas, pointer-events work */
+.react-pdf__Page__textContent,
+.textLayer {
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
+.react-pdf__Page__canvas {
+  z-index: 1;
+}
+
+/* 4. Page container must be positioned for stacking context */
+.react-pdf__Page {
+  position: relative;
+}
+
+/* Scrollbar enhancements */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -110,7 +172,16 @@ button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
+
   button:active {
     background-color: #0f0f0f69;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #555;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #777;
   }
 }

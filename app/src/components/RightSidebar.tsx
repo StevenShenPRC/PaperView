@@ -11,6 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CopyIcon from '@mui/icons-material/ContentCopy';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
@@ -43,7 +44,12 @@ interface ChatSession {
     model: string;
 }
 
-const RightSidebar: React.FC = () => {
+interface RightSidebarProps {
+    hasCollapsedPdf?: boolean;
+    onExpandReader?: () => void;
+}
+
+const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, onExpandReader }) => {
     const { t } = useTranslation();
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -520,9 +526,13 @@ const RightSidebar: React.FC = () => {
                 {/* Collapsed View: Show minimal/nothing or just expand button above */}
                 {collapsed ? (
                     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 2 }}>
-                        <IconButton onClick={() => startNewChat()}>
-                            <AddIcon />
-                        </IconButton>
+                        {hasCollapsedPdf && onExpandReader && (
+                            <Tooltip title={t('app.open_reader') || "Open Reader"}>
+                                <IconButton onClick={onExpandReader}>
+                                    <MenuBookIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Box>
                 ) : (
                     <>
