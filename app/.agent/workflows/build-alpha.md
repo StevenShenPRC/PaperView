@@ -17,3 +17,5 @@ Note: Due to Windows MSI installer restrictions, the version string in `tauri.co
 - If you use `0.0.1-alpha.1`, the MSI build will fail.
 - Recommended approach: Use the semantic version (e.g., `0.0.1-alpha.1`) in `package.json` and `Cargo.toml`, but keep `tauri.conf.json` as `0.0.1`.
 - The installer filename can be manually renamed after the build to add suffixes like `-alpha.1`.
+
+5. rename windows installer with a suffix like -alpha.1 according to the version string in build config
