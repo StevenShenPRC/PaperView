@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Drawer, Typography, Box, TextField, Button, Divider, IconButton,
+    Drawer, Typography, Box, TextField, Divider, IconButton,
     CircularProgress, Tooltip, Select, MenuItem, FormControl,
-    List, ListItem, ListItemText, ListItemButton, Popover, Menu
+    List, ListItem, ListItemText, ListItemButton, Popover, Menu, Chip
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AddIcon from '@mui/icons-material/Add';
@@ -10,7 +10,6 @@ import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CopyIcon from '@mui/icons-material/ContentCopy';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SearchIcon from '@mui/icons-material/Search';
 import { useTranslation } from 'react-i18next';
@@ -32,16 +31,57 @@ const MIN_WIDTH = 300;
 const MAX_WIDTH = 800;
 const COLLAPSED_WIDTH = 60;
 
-import { ChatMessage, ChatSession, SearchResult, HistorySearchResults } from '../types';
+import { ChatMessage, ChatSession, SearchResult, HistorySearchResults, PendingContext, ContextItem } from '../types';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 
 interface RightSidebarProps {
     hasCollapsedPdf?: boolean;
     onExpandReader?: () => void;
+    pendingContext?: PendingContext | null;
+    onContextHandled?: () => void;
 }
 
-const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, onExpandReader }) => {
+const RightSidebar: React.FC<RightSidebarProps> = ({
+    hasCollapsedPdf = false, onExpandReader, pendingContext, onContextHandled
+}) => {
     const { t } = useTranslation();
+
+    // Handle Pending Context
+    useEffect(() => {
+        if (pendingContext) {
+            handlePendingContext(pendingContext);
+        }
+    }, [pendingContext]);
+
+    const handlePendingContext = async (ctx: PendingContext) => {
+        // Expand sidebar if collapsed
+        if (collapsed) {
+            setCollapsed(false);
+        }
+
+        if (ctx.mode === 'new') {
+            await startNewChat();
+            setContextItems(ctx.items);
+            // Focus input
+            setTimeout(() => {
+                const inputEl = document.getElementById('chat-input');
+                if (inputEl) inputEl.focus();
+            }, 100);
+        } else if (ctx.mode === 'append') {
+            setContextItems(prev => {
+                const existingIds = new Set(prev.map(i => i.id));
+                const newItems = ctx.items.filter(i => !existingIds.has(i.id));
+                return [...prev, ...newItems];
+            });
+        }
+
+        if (onContextHandled) onContextHandled();
+    };
     const [input, setInput] = useState('');
+    const [contextItems, setContextItems] = useState<ContextItem[]>([]);
+    const [isInputExpanded, setIsInputExpanded] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -275,16 +315,26 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
     const loadMessages = async (sessionId: string) => {
         try {
             const msgs = await invoke<ChatMessage[]>('get_chat_messages', { sessionId });
-            // content is JSONB, we need to extract text for UI or handle object
-            // UI expects ChatMessage with content: string? 
-            // Wait, UI code uses `msg.content`. If it's an object now, we need to adapt.
-            // Let's adapt local state to string or update UI to handle object.
-            // Updating UI to handle object is better (supports attachments later).
-            // But for now, let's map it to string for ReactMarkdown.
-            const uiMsgs = msgs.map(m => ({
-                ...m,
-                content: typeof m.content === 'string' ? m.content : (m.content.text || JSON.stringify(m.content))
-            }));
+            const uiMsgs = msgs.map(m => {
+                let contentText = "";
+                let contextItems: ContextItem[] | undefined = undefined;
+
+                if (typeof m.content === 'string') {
+                    contentText = m.content;
+                } else {
+                    // Handle JSON content
+                    contentText = m.content.text || JSON.stringify(m.content);
+                    if (m.content.context_items && Array.isArray(m.content.context_items)) {
+                        contextItems = m.content.context_items;
+                    }
+                }
+
+                return {
+                    ...m,
+                    content: contentText,
+                    context_items: contextItems // Restore context items for display
+                };
+            });
             setMessages(uiMsgs);
         } catch (e) {
             console.error("Failed to load messages", e);
@@ -292,7 +342,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
     };
 
     // START NEW CHAT
-    const startNewChat = async (modelOverride?: string) => {
+    const startNewChat = async (modelOverride?: string): Promise<string | null> => {
         // Use default model for new chats unless overridden, don't stick to previously selected if it was from another session
         const modelToUse = modelOverride || defaultModel || 'gpt-3.5-turbo';
         try {
@@ -311,7 +361,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
                         setSessions(prev => prev.map(s => s.id === latestSession.id ? { ...s, model: modelToUse } : s));
                     }
                     setSelectedModel(modelToUse);
-                    return;
+                    return latestSession.id;
                 }
             }
 
@@ -324,8 +374,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
             setMessages([]);
             // Update UI to show the model we just used
             setSelectedModel(modelToUse);
+            return newId;
         } catch (e) {
             console.error("Failed to create session", e);
+            return null;
         }
     };
 
@@ -424,6 +476,65 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
                             content: { text: fullContent }
                         });
                         console.log("Assistant message saved to DB");
+
+                        // Auto-generate session title after first exchange
+                        const allMsgs = await invoke<ChatMessage[]>('get_chat_messages', { sessionId });
+                        if (allMsgs.length <= 2) {
+                            // First exchange - generate title
+                            try {
+                                const providerName = await store.get<string>('active_ai_provider') || "";
+                                const titleMessages = allMsgs.map(m => ({
+                                    role: m.role,
+                                    content: typeof m.content === 'string' ? m.content : (m.content.text || "")
+                                }));
+
+                                // Resolve model from provider config
+                                let titleModel = 'gpt-3.5-turbo';
+                                const providers = await store.get<any[]>('ai_providers');
+                                if (providerName && providers) {
+                                    const provider = providers.find((p: any) => p.name === providerName);
+                                    if (provider) {
+                                        titleModel = provider.default_model || (provider.models && provider.models[0]) || titleModel;
+                                    }
+                                }
+                                let finalTitle = "";
+                                try {
+                                    const title = await invoke<string>('generate_chat_title_command', {
+                                        messages: titleMessages,
+                                        model: titleModel,
+                                        providerName: providerName
+                                    });
+                                    if (title && title.trim()) {
+                                        finalTitle = title.trim().replace(/^["']|["']$/g, ''); // Remove quotes
+                                    }
+                                } catch (titleErr) {
+                                    console.error("Failed to generate session title via AI, will fallback", titleErr);
+                                }
+
+                                // Fallback: Use first user message if AI failed or returned empty
+                                if (!finalTitle && allMsgs.length > 0) {
+                                    const firstMsg = allMsgs[0];
+                                    const content = typeof firstMsg.content === 'string' ? firstMsg.content : (firstMsg.content.text || "");
+                                    finalTitle = content.substring(0, 30).trim() + (content.length > 30 ? "..." : "");
+                                    console.log("Using fallback title from first message:", finalTitle);
+                                }
+
+                                if (finalTitle) {
+                                    await invoke('update_chat_session', {
+                                        id: sessionId,
+                                        title: finalTitle,
+                                        model: null as string | null
+                                    });
+                                    // Update local sessions list
+                                    setSessions(prev => prev.map(s =>
+                                        s.id === sessionId ? { ...s, title: finalTitle } : s
+                                    ));
+                                    console.log("Session title updated:", finalTitle);
+                                }
+                            } catch (titleErr) {
+                                console.error("General error during title generation/update:", titleErr);
+                            }
+                        }
                     } catch (e) {
                         console.error("Failed to save assistant message", e);
                     }
@@ -447,24 +558,41 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
     }, []);
 
     const handleSend = async () => {
-        if (!input.trim() || isLoading || !currentSessionId) return; // Ensure session ID
+        if (!input.trim() && contextItems.length === 0) return;
+        if (isLoading) return;
 
-        const userMsg: ChatMessage = { role: 'user', content: input, session_id: currentSessionId, created_at: new Date().toISOString() };
+        let sessionId = currentSessionId;
+        if (!sessionId) {
+            sessionId = await startNewChat();
+        }
+        if (!sessionId) return;
+
+        const userMsg: ChatMessage = {
+            role: 'user',
+            content: input,
+            session_id: sessionId,
+            context_items: contextItems.length > 0 ? contextItems : undefined,
+            created_at: new Date().toISOString()
+        };
         const newMessages = [...messages, userMsg];
         setMessages(newMessages);
         setInput('');
+        setContextItems([]); // Clear context items after sending
         setIsLoading(true);
         streamingContentRef.current = ""; // Reset for new response
 
         // Save User Message to DB
         invoke('create_chat_message', {
-            sessionId: currentSessionId,
+            sessionId: sessionId,
             role: 'user',
-            content: { text: input }
+            content: {
+                text: input,
+                context_items: contextItems.length > 0 ? contextItems : undefined
+            }
         }).catch(e => console.error("Failed to save user msg", e));
 
         // Add empty assistant message to start with
-        const assistantPlaceholder: ChatMessage = { role: 'assistant', content: '', session_id: currentSessionId, created_at: new Date().toISOString() };
+        const assistantPlaceholder: ChatMessage = { role: 'assistant', content: '', session_id: sessionId || "", created_at: new Date().toISOString() };
         setMessages(prev => [...prev, assistantPlaceholder]);
 
         // We need to pass valid messages to backend for context. 
@@ -472,10 +600,22 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
         // `chat_command` defines `ChatMessage` struct in `ai.rs` or `main.rs`? 
         // `ai.rs` has `ChatMessage { role: String, content: String }`.
         // Our updated `ChatMessage` has `content: any`. We need to normalize.
-        const contextMessages = newMessages.map(m => ({
-            role: m.role,
-            content: typeof m.content === 'string' ? m.content : (m.content.text || "")
-        }));
+        const contextMessages = newMessages.map(m => {
+            let contentStr = typeof m.content === 'string' ? m.content : (m.content.text || "");
+
+            // Append context items to content for AI if present
+            if (m.context_items && m.context_items.length > 0) {
+                const contextStr = m.context_items.map(item =>
+                    `[Context from ${item.source} (${item.label})]:\n${item.text}`
+                ).join("\n\n");
+                contentStr += `\n\n---\n${contextStr}`;
+            }
+
+            return {
+                role: m.role,
+                content: contentStr
+            };
+        });
 
         try {
             // Use local state activeProvider and selectedModel if available
@@ -505,7 +645,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
             // Let's use a ref or state to track current streaming content and save on done.
         } catch (error) {
             console.error('Failed to send message:', error);
-            setMessages(prev => [...prev, { role: 'system', content: `Error: ${error}`, session_id: currentSessionId, created_at: new Date().toISOString() }]);
+            setMessages(prev => [...prev, { role: 'system', content: `Error: ${error}`, session_id: sessionId || "", created_at: new Date().toISOString() }]);
             setIsLoading(false);
         }
     };
@@ -948,16 +1088,16 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
 
                                                     {/* Message Content */}
                                                     <Box sx={{
-                                                        bgcolor: isUser ? 'primary.light' : 'transparent', // No bg for AI
+                                                        bgcolor: isUser ? 'primary.light' : 'transparent',
                                                         color: isUser ? 'primary.contrastText' : 'text.primary',
-                                                        p: isUser ? 1.5 : 0.5, // Less padding for AI text
+                                                        p: isUser ? 1.5 : 0.5,
                                                         borderRadius: isUser ? 2 : 0,
                                                         boxShadow: isUser ? 1 : 0,
                                                         order: isUser ? 1 : 0,
-                                                        width: isUser ? 'auto' : '100%', // Full width for AI, auto for user
-                                                        maxWidth: isUser ? '90%' : '100%', // User constrained
-                                                        flexGrow: isUser ? 0 : 1, // AI grows to fill
-                                                        overflow: 'hidden' // Ensure code blocks don't overflow
+                                                        width: isUser ? 'auto' : '100%',
+                                                        maxWidth: isUser ? '90%' : '100%',
+                                                        flexGrow: isUser ? 0 : 1,
+                                                        overflow: 'hidden'
                                                     }}>
                                                         <ReactMarkdown
                                                             remarkPlugins={[remarkMath]}
@@ -1003,6 +1143,44 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
                                                     </Box>
                                                 </Box>
 
+                                                {/* Context Chips below message bubble */}
+                                                {msg.context_items && msg.context_items.length > 0 && (
+                                                    <Box sx={{
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        gap: 0.5,
+                                                        mt: 0.5,
+                                                        justifyContent: isUser ? 'flex-end' : 'flex-start'
+                                                    }}>
+                                                        {msg.context_items.map((item, idx) => (
+                                                            <Tooltip
+                                                                key={`${item.id}-${idx}`}
+                                                                title={
+                                                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflow: 'auto', p: 0.5 }}>
+                                                                        {item.text}
+                                                                    </Typography>
+                                                                }
+                                                                arrow
+                                                                placement="bottom"
+                                                                enterDelay={300}
+                                                                slotProps={{
+                                                                    tooltip: {
+                                                                        sx: { maxWidth: 400, bgcolor: 'background.paper', color: 'text.primary', boxShadow: 3, border: '1px solid', borderColor: 'divider' }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Chip
+                                                                    label={`${item.source.substring(0, 20)}${item.source.length > 20 ? '…' : ''}: ${item.label}`}
+                                                                    size="small"
+                                                                    color="default"
+                                                                    variant="outlined"
+                                                                    sx={{ bgcolor: 'action.hover', fontSize: '0.7rem', cursor: 'pointer' }}
+                                                                />
+                                                            </Tooltip>
+                                                        ))}
+                                                    </Box>
+                                                )}
+
                                                 {!isUser && (
                                                     <Divider sx={{ my: 1, borderColor: 'divider', opacity: 1 }} />
                                                 )}
@@ -1036,27 +1214,103 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ hasCollapsedPdf = false, on
                             <MenuItem selected={defaultCopyFormat === 'markdown'} onClick={() => saveDefaultCopyFormat('markdown')}>Markdown</MenuItem>
                         </Menu>
 
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                size="small"
-                                fullWidth
-                                placeholder={t('app.ask_placeholder')}
-                                variant="outlined"
-                                multiline
-                                maxRows={4}
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={isLoading}
-                            />
-                            <Button
-                                variant="contained"
-                                size="small"
-                                onClick={handleSend}
-                                disabled={isLoading || !input.trim()}
-                            >
-                                {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
-                            </Button>
+                        <Box sx={{
+                            p: 2,
+                            borderTop: 1,
+                            borderColor: 'divider',
+                            height: isInputExpanded ? '80%' : 'auto',
+                            transition: 'height 0.3s ease-in-out',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            <Box sx={{ position: 'relative', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                {/* Context Chips */}
+                                {contextItems.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                        {contextItems.map((item) => (
+                                            <Tooltip
+                                                key={item.id}
+                                                title={
+                                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflow: 'auto', p: 0.5 }}>
+                                                        {item.text}
+                                                    </Typography>
+                                                }
+                                                arrow
+                                                placement="top"
+                                                enterDelay={300}
+                                                slotProps={{
+                                                    tooltip: {
+                                                        sx: { maxWidth: 400, bgcolor: 'background.paper', color: 'text.primary', boxShadow: 3, border: '1px solid', borderColor: 'divider' }
+                                                    }
+                                                }}
+                                            >
+                                                <Chip
+                                                    label={`${item.source.substring(0, 20)}${item.source.length > 20 ? '...' : ''}: ${item.label}`}
+                                                    onDelete={() => setContextItems(prev => prev.filter(i => i.id !== item.id))}
+                                                    size="small"
+                                                    color="primary"
+                                                    variant="outlined"
+                                                    sx={{ bgcolor: 'action.selected', cursor: 'pointer' }}
+                                                />
+                                            </Tooltip>
+                                        ))}
+                                    </Box>
+                                )}
+
+                                <TextField
+                                    id="chat-input"
+                                    fullWidth
+                                    multiline
+                                    minRows={isInputExpanded ? 10 : 3}
+                                    maxRows={isInputExpanded ? undefined : 6}
+                                    placeholder={t('app.type_message') || "Type a message..."}
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{
+                                        flexGrow: 1,
+                                        '& .MuiOutlinedInput-root': {
+                                            paddingRight: '40px', // Space for both icons if needed
+                                            height: '100%',
+                                            alignItems: 'flex-start',
+                                            paddingTop: '8px',
+                                            paddingBottom: '8px'
+                                        }
+                                    }}
+                                />
+
+                                {/* Expand/Collapse Button - Now Inside */}
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setIsInputExpanded(!isInputExpanded)}
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 6,
+                                        right: 6,
+                                        color: 'text.secondary',
+                                        zIndex: 2
+                                    }}
+                                >
+                                    {isInputExpanded ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
+                                </IconButton>
+
+                                {/* Send Button - Now Inside */}
+                                <IconButton
+                                    color="primary"
+                                    onClick={handleSend}
+                                    disabled={(!input.trim() && contextItems.length === 0) || isLoading}
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: 6,
+                                        right: 6,
+                                        zIndex: 2
+                                    }}
+                                >
+                                    {isLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                                </IconButton>
+                            </Box>
                         </Box>
                     </>
                 )}

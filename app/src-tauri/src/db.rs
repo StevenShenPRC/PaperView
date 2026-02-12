@@ -24,6 +24,8 @@ pub struct Paper {
     pub abstract_cn: Option<String>,
     pub local_path: Option<String>,
     pub pdfs: Vec<PaperPdf>,
+    #[serde(default)]
+    pub groups: Vec<i64>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -46,6 +48,13 @@ pub struct Batch {
     #[serde(rename = "issueDate")]
     pub issue_date: String,
     pub latest_time: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Group {
+    pub id: i64,
+    pub name: String,
+    pub created_at: String,
 }
 
 // History DB Models
@@ -129,6 +138,27 @@ pub fn init_db<P: AsRef<Path>>(path: P) -> Result<Connection> {
             display_name TEXT NOT NULL,
             added_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (paper_id) REFERENCES papers(id) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+
+    // Groups system
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS groups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS paper_group_map (
+            paper_id INTEGER NOT NULL,
+            group_id INTEGER NOT NULL,
+            PRIMARY KEY (paper_id, group_id),
+            FOREIGN KEY (paper_id) REFERENCES papers(id) ON DELETE CASCADE,
+            FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
         )",
         [],
     )?;
@@ -378,6 +408,7 @@ pub fn get_papers_by_batch(
             abstract_cn: row.get(9).ok(),
             local_path: row.get(10).ok(),
             pdfs: vec![],
+            groups: vec![],
         })
     })?;
 
@@ -385,6 +416,7 @@ pub fn get_papers_by_batch(
     for row in rows {
         let mut paper = row?;
         paper.pdfs = get_pdfs_for_paper(conn, paper.id).unwrap_or_default();
+        paper.groups = get_groups_for_paper(conn, paper.id).unwrap_or_default();
         papers.push(paper);
     }
 
@@ -424,10 +456,12 @@ pub fn get_paper_by_id(conn: &Connection, id: i64) -> Result<Paper> {
             abstract_cn: row.get(9).ok(),
             local_path: row.get(10).ok(),
             pdfs: vec![],
+            groups: vec![],
         })
     })
     .map(|mut paper| {
         paper.pdfs = get_pdfs_for_paper(conn, paper.id).unwrap_or_default();
+        paper.groups = get_groups_for_paper(conn, paper.id).unwrap_or_default();
         paper
     })
 }
@@ -491,6 +525,108 @@ pub fn update_paper_translation(
         params![title_cn, abstract_cn, id],
     )?;
     Ok(())
+}
+
+// --- Group Functions ---
+
+pub fn create_group(conn: &Connection, name: &str) -> Result<i64> {
+    conn.execute("INSERT INTO groups (name) VALUES (?)", params![name])?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_groups(conn: &Connection) -> Result<Vec<Group>> {
+    let mut stmt =
+        conn.prepare("SELECT id, name, created_at FROM groups ORDER BY created_at DESC")?;
+    let rows = stmt.query_map([], |row| {
+        Ok(Group {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            created_at: row.get(2)?,
+        })
+    })?;
+
+    let mut groups = Vec::new();
+    for row in rows {
+        groups.push(row?);
+    }
+    Ok(groups)
+}
+
+pub fn rename_group(conn: &Connection, id: i64, new_name: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE groups SET name = ? WHERE id = ?",
+        params![new_name, id],
+    )?;
+    Ok(())
+}
+
+pub fn delete_group(conn: &Connection, id: i64) -> Result<()> {
+    conn.execute("DELETE FROM groups WHERE id = ?", params![id])?;
+    Ok(())
+}
+
+pub fn add_paper_to_group(conn: &Connection, paper_id: i64, group_id: i64) -> Result<()> {
+    conn.execute(
+        "INSERT OR IGNORE INTO paper_group_map (paper_id, group_id) VALUES (?, ?)",
+        params![paper_id, group_id],
+    )?;
+    Ok(())
+}
+
+pub fn remove_paper_from_group(conn: &Connection, paper_id: i64, group_id: i64) -> Result<()> {
+    conn.execute(
+        "DELETE FROM paper_group_map WHERE paper_id = ? AND group_id = ?",
+        params![paper_id, group_id],
+    )?;
+    Ok(())
+}
+
+pub fn get_papers_by_group(conn: &Connection, group_id: i64) -> Result<Vec<Paper>> {
+    let mut stmt = conn.prepare(
+        "SELECT p.id, p.website, p.journalName, p.issueVolume, p.issueDate, p.title, p.doi, p.abstract, p.title_cn, p.abstract_cn, p.local_path
+         FROM papers p
+         JOIN paper_group_map m ON p.id = m.paper_id
+         WHERE m.group_id = ?
+         ORDER BY p.id ASC"
+    )?;
+
+    let rows = stmt.query_map(params![group_id], |row| {
+        Ok(Paper {
+            id: row.get(0)?,
+            website: row.get(1)?,
+            journal_name: row.get(2)?,
+            issue_volume: row.get(3)?,
+            issue_date: row.get(4)?,
+            title: row.get(5)?,
+            doi: row.get(6)?,
+            abstract_text: row.get(7)?,
+            title_cn: row.get(8).ok(),
+            abstract_cn: row.get(9).ok(),
+            local_path: row.get(10).ok(),
+            pdfs: vec![],
+            groups: vec![],
+        })
+    })?;
+
+    let mut papers = Vec::new();
+    for row in rows {
+        let mut paper = row?;
+        paper.pdfs = get_pdfs_for_paper(conn, paper.id).unwrap_or_default();
+        paper.groups = get_groups_for_paper(conn, paper.id).unwrap_or_default();
+        papers.push(paper);
+    }
+
+    Ok(papers)
+}
+
+pub fn get_groups_for_paper(conn: &Connection, paper_id: i64) -> Result<Vec<i64>> {
+    let mut stmt = conn.prepare("SELECT group_id FROM paper_group_map WHERE paper_id = ?")?;
+    let rows = stmt.query_map(params![paper_id], |row| row.get(0))?;
+    let mut groups = Vec::new();
+    for row in rows {
+        groups.push(row?);
+    }
+    Ok(groups)
 }
 
 // --- History DB Operations ---

@@ -5,7 +5,7 @@ use crate::network;
 use tauri::{AppHandle, Emitter};
 // use futures::StreamExt; // Start using futures for streaming
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -185,7 +185,7 @@ pub async fn chat_simple(
     }
     
     let text = resp.text().await.map_err(|e| format!("Available text error: {}", e))?;
-    // println!("Raw response text: {}", text);
+    println!("[chat_simple] Raw response text: {}", text);
 
     let json_resp: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("JSON parse error: {} for text: {}", e, text))?;
     
@@ -316,4 +316,55 @@ pub async fn get_embeddings(
     } else {
         Err("No embedding data returned".to_string())
     }
+}
+
+pub async fn generate_chat_title(
+    base_url: String,
+    api_key: String,
+    model: String,
+    messages: Vec<ChatMessage>,
+    proxy_mode: String,
+    proxy_url: Option<String>,
+    additional_headers: Option<HashMap<String, String>>,
+) -> Result<String, String> {
+    // Build a single user message containing conversation summary + instruction
+    // This avoids system-role compatibility issues with Gemini/NewAPI
+    let mut conversation_text = String::new();
+    for msg in messages.iter()
+        .filter(|m| m.role == "user" || m.role == "assistant")
+        .take(3)
+    {
+        let role_label = if msg.role == "user" { "User" } else { "Assistant" };
+        // Truncate very long messages for title generation
+        let content = if msg.content.len() > 500 {
+            format!("{}...", &msg.content[..500])
+        } else {
+            msg.content.clone()
+        };
+        conversation_text.push_str(&format!("{}:{}\n", role_label, content));
+    }
+    
+    let prompt = format!(
+        "Here is a conversation:\n{}\nGenerate a short title (3-6 words) for it. Use the same language as the user. Output ONLY the title, nothing else.",
+        conversation_text
+    );
+    
+    let prompt_msgs = vec![
+        ChatMessage { role: "user".to_string(), content: prompt }
+    ];
+    
+    println!("[generate_chat_title] Sending title request with model: {}", model);
+    let title = chat_simple(base_url, api_key, model, prompt_msgs, proxy_mode, proxy_url, additional_headers).await?;
+    
+    println!("[generate_chat_title] Raw AI Title Response: '{}'", title);
+    
+    // Clean up title
+    let clean_title = title.trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .trim_matches('*')
+        .trim_end_matches('.')
+        .to_string();
+        
+    Ok(clean_title)
 }

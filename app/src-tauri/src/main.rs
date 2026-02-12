@@ -460,6 +460,57 @@ async fn chat_command(
 }
 
 #[tauri::command]
+async fn generate_chat_title_command(
+    app: AppHandle,
+    messages: Vec<ai::ChatMessage>,
+    model: String,
+    provider_name: String
+) -> Result<String, String> {
+    println!("generate_chat_title_command called using provider: {}, model: {}", provider_name, model);
+    // Get Config
+    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    
+    // Get Provider Config by name
+    let store = app.store("settings.json").map_err(|e| e.to_string())?;
+    
+    let mut base_url = "".to_string();
+    let mut api_key = "".to_string();
+    let mut headers = None;
+    
+    if let Some(providers_val) = store.get("ai_providers") {
+        if let Some(providers) = providers_val.as_array() {
+            for p in providers {
+                if let Some(p_name) = p.get("name").and_then(|v| v.as_str()) {
+                    if p_name == provider_name {
+                        base_url = p.get("base_url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        api_key = p.get("api_key").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        
+                         let headers_val = p.get("additional_headers");
+                         if let Some(h_obj) = headers_val.and_then(|v| v.as_object()) {
+                             let mut map = std::collections::HashMap::new();
+                             for (k, v) in h_obj {
+                                 if let Some(v_str) = v.as_str() {
+                                     map.insert(k.to_string(), v_str.to_string());
+                                 }
+                             }
+                             headers = Some(map);
+                         }
+                         break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if base_url.is_empty() {
+        return Err("Provider not found or missing URL".to_string());
+    }
+
+    ai::generate_chat_title(base_url, api_key, model, messages, proxy_mode, proxy_url, headers).await
+}
+
+
+#[tauri::command]
 async fn fetch_models_command(
     app: AppHandle,
     base_url: String,
@@ -684,6 +735,58 @@ async fn create_chat_message(
     Ok(msg_id)
 }
 
+// --- Group Commands ---
+
+#[tauri::command]
+async fn create_group(app: AppHandle, _state: State<'_, AppState>, name: String) -> Result<i64, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::create_group(&conn, &name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_groups(app: AppHandle, _state: State<'_, AppState>) -> Result<Vec<db::Group>, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::get_groups(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn rename_group(app: AppHandle, _state: State<'_, AppState>, id: i64, new_name: String) -> Result<(), String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::rename_group(&conn, id, &new_name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_group(app: AppHandle, _state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::delete_group(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_paper_to_group(app: AppHandle, _state: State<'_, AppState>, paper_id: i64, group_id: i64) -> Result<(), String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::add_paper_to_group(&conn, paper_id, group_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn remove_paper_from_group(app: AppHandle, _state: State<'_, AppState>, paper_id: i64, group_id: i64) -> Result<(), String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::remove_paper_from_group(&conn, paper_id, group_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_papers_by_group(app: AppHandle, _state: State<'_, AppState>, group_id: i64) -> Result<Vec<db::Paper>, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    db::get_papers_by_group(&conn, group_id).map_err(|e| e.to_string())
+}
+
+
 #[derive(Serialize)]
 struct HistorySearchResults {
     rag: Vec<db::SearchResult>,
@@ -797,10 +900,19 @@ fn main() {
             greet, 
             get_batches, 
             get_papers, 
-            update_metadata, 
+            update_metadata,
+            create_group,
+            get_groups,
+            rename_group,
+            delete_group,
+            add_paper_to_group,
+            remove_paper_from_group,
+            get_papers_by_group, 
             translate_paper,
             chat_command,
+            generate_chat_title_command,
             fetch_models_command,
+
             attach_pdf,
             read_pdf,
             delete_pdf_command,

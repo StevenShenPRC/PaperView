@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Box, IconButton, Typography, CircularProgress,
     Tooltip, Toolbar, AppBar, Select, MenuItem,
     FormControl, Paper as MuiPaper, Fade, useTheme,
-    TextField, Stack, InputAdornment
+    TextField, Stack, InputAdornment, Menu, ListItemIcon, ListItemText
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
@@ -14,7 +15,11 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import FitScreenIcon from '@mui/icons-material/FitScreen';
 import HeightIcon from '@mui/icons-material/Height';
 import UndoIcon from '@mui/icons-material/Undo';
-import { Paper, PaperPdf } from '../types';
+import { Paper, PaperPdf, PendingContext } from '../types';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import AddIcon from '@mui/icons-material/Add';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { ContextItem } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 
@@ -34,6 +39,7 @@ interface PDFReaderProps {
     onClose: () => void;
     onPdfChange: (pdf: PaperPdf) => void;
     isResizing?: boolean;
+    onAddContext?: (context: PendingContext) => void;
 }
 
 interface JumpHistory {
@@ -65,7 +71,7 @@ const clampScale = (val: number): number =>
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange, isResizing = false }) => {
+const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange, isResizing = false, onAddContext }) => {
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -161,7 +167,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
         if (isScaleInputFocused) return;
         if (scale === 'page-width') setCustomScaleInput(t('app.fit_width'));
         else if (scale === 'page-height') setCustomScaleInput(t('app.fit_height'));
-        else setCustomScaleInput(`${Math.round(scale * 100)}%`);
+        else setCustomScaleInput(`${Math.round(scale * 100)}% `);
     }, [scale, t, isScaleInputFocused]);
 
     // ── Sync page input text ──────────────────────────────────────────────
@@ -197,7 +203,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
     const handleScaleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
         setIsScaleInputFocused(true);
         e.target.select();
-        setCustomScaleInput(typeof scale === 'string' ? "100" : `${Math.round(scale * 100)}`);
+        setCustomScaleInput(typeof scale === 'string' ? "100" : `${Math.round(scale * 100)} `);
     }, [scale]);
 
     const handleScaleInputCommit = useCallback(() => {
@@ -208,7 +214,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
             // Revert display
             if (scale === 'page-width') setCustomScaleInput(t('app.fit_width'));
             else if (scale === 'page-height') setCustomScaleInput(t('app.fit_height'));
-            else setCustomScaleInput(`${Math.round(scale * 100)}%`);
+            else setCustomScaleInput(`${Math.round(scale * 100)}% `);
         }
     }, [customScaleInput, scale, t]);
 
@@ -219,7 +225,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
 
     // ── Page navigation handlers ──────────────────────────────────────────
     const scrollToPage = useCallback((pageNum: number) => {
-        document.getElementById(`pdf-page-${pageNum}`)
+        document.getElementById(`pdf - page - ${pageNum} `)
             ?.scrollIntoView({ behavior: 'auto', block: 'start' });
     }, []);
 
@@ -298,6 +304,29 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
     // ── Determine if content will overflow (for centering logic) ──────────
     const contentOverflows = pageWidth !== undefined && pageWidth > availableWidth;
 
+    // ── Context Menu State ──
+    const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number; text: string } | null>(null);
+
+    const handleMouseUp = (event: React.MouseEvent) => {
+        const selection = window.getSelection();
+        const selectedText = selection?.toString().trim();
+
+        if (selectedText && selectedText.length > 0) {
+            // Check if selection is inside PDF container
+            if (containerRef.current && containerRef.current.contains(selection?.anchorNode?.parentElement || null)) {
+                setContextMenu({
+                    mouseX: event.clientX,
+                    mouseY: event.clientY,
+                    text: selectedText
+                });
+            }
+        } else {
+            // Don't close immediately if clicking menu, but Menu handles its own close.
+            // Only clear if clicking elsewhere.
+            // setContextMenu(null); // Menu handles backdrop click
+        }
+    };
+
     // ── Render ────────────────────────────────────────────────────────────
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default', position: 'relative' }}>
@@ -342,6 +371,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
                 ref={containerRef}
                 onScroll={handleScroll}
                 onWheel={handleWheelZoom}
+                onMouseUp={handleMouseUp}
                 sx={{
                     flexGrow: 1,
                     overflowY: 'auto',
@@ -390,8 +420,8 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
                                 const pageNum = i + 1;
                                 return (
                                     <Box
-                                        id={`pdf-page-${pageNum}`}
-                                        key={`page_${pageNum}`}
+                                        id={`pdf - page - ${pageNum} `}
+                                        key={`page_${pageNum} `}
                                         className="pdf-page-container"
                                         sx={{ mb: 2 }}
                                         onClickCapture={handlePageClickCapture}
@@ -559,6 +589,54 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
                     </Stack>
                 </MuiPaper>
             </Fade>
+
+            {/* Context Menu */}
+            <Menu
+                open={contextMenu !== null}
+                onClose={() => setContextMenu(null)}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu !== null
+                        ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                        : undefined
+                }
+            >
+                <MenuItem onClick={() => {
+                    if (contextMenu) {
+                        navigator.clipboard.writeText(contextMenu.text);
+                        setContextMenu(null);
+                    }
+                }}>
+                    <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>{t('app.copy') || "Copy"}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => {
+                    const newItem: ContextItem = {
+                        id: crypto.randomUUID(),
+                        text: contextMenu!.text,
+                        source: pdf.filename,
+                        label: 'PDF Selection'
+                    };
+                    onAddContext?.({ items: [newItem], mode: 'new' });
+                    setContextMenu(null);
+                }}>
+                    <ListItemIcon><AutoAwesomeIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>{t('app.new_chat_with_context') || "New Chat with Context"}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => {
+                    const newItem: ContextItem = {
+                        id: crypto.randomUUID(),
+                        text: contextMenu!.text,
+                        source: pdf.filename,
+                        label: 'PDF Selection'
+                    };
+                    onAddContext?.({ items: [newItem], mode: 'append' });
+                    setContextMenu(null);
+                }}>
+                    <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>{t('app.append_to_chat') || "Append to Chat"}</ListItemText>
+                </MenuItem>
+            </Menu>
         </Box>
     );
 };

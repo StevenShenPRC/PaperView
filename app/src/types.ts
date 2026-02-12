@@ -11,7 +11,15 @@ export interface Paper {
     abstract_cn?: string;
     local_path?: string;
     pdfs: PaperPdf[];
+    groups?: number[];
 }
+
+export interface Group {
+    id: number;
+    name: string;
+    created_at: string;
+}
+
 
 export interface PaperPdf {
     id: number;
@@ -55,6 +63,7 @@ export interface ChatMessage {
     session_id: string;
     role: 'user' | 'assistant' | 'system';
     content: any; // JSONB
+    context_items?: ContextItem[];
     created_at: string;
 }
 
@@ -78,4 +87,16 @@ export interface SearchResult {
 export interface HistorySearchResults {
     rag: SearchResult[];
     fts: SearchResult[];
+}
+
+export interface ContextItem {
+    id: string;
+    text: string;
+    source: string; // e.g., "filename.pdf" or "Paper Title"
+    label: string;  // e.g., "Abstract", "Selection", "Title"
+}
+
+export interface PendingContext {
+    items: ContextItem[];
+    mode: 'new' | 'append';
 }

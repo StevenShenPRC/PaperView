@@ -7,7 +7,7 @@ import RightSidebar from './components/RightSidebar';
 import SettingsDialog from './components/SettingsDialog';
 import PaperList from './components/PaperList';
 import PDFReader from './components/PDFReader';
-import { Batch, Paper, PaperPdf } from './types';
+import { Batch, Paper, PaperPdf, Group, PendingContext } from './types';
 import { useTranslation } from 'react-i18next';
 
 import { listen } from '@tauri-apps/api/event';
@@ -17,9 +17,14 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 function App() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [papers, setPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // AI Context State
+  const [pendingContext, setPendingContext] = useState<PendingContext | null>(null);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Default to collapsed
   const { t } = useTranslation();
 
@@ -53,6 +58,7 @@ function App() {
 
   useEffect(() => {
     loadBatches();
+    loadGroups();
 
     let unlistenData: (() => void) | undefined;
     let unlistenPaper: (() => void) | undefined;
@@ -103,18 +109,23 @@ function App() {
     try {
       const result = await invoke<Batch[]>('get_batches');
       setBatches(result);
-      // Don't auto-select on reload, preserve selection
-      if (result.length > 0 && !selectedBatch) {
-        // Only select first if nothing selected
-        // Logic specific to initial load moved to separate effect if needed or checked via ref
-      }
     } catch (error) {
       console.error('Failed to load batches:', error);
     }
   };
 
+  const loadGroups = async () => {
+    try {
+      const result = await invoke<Group[]>('get_groups');
+      setGroups(result);
+    } catch (error) {
+      console.error('Failed to load groups:', error);
+    }
+  };
+
   const handleSelectBatch = async (batch: Batch) => {
     setSelectedBatch(batch);
+    setSelectedGroup(null); // Clear group selection
     setLoading(true);
     try {
       const result = await invoke<Paper[]>('get_papers', {
@@ -127,6 +138,62 @@ function App() {
       console.error('Failed to load papers:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectGroup = async (group: Group) => {
+    setSelectedGroup(group);
+    setSelectedBatch(null); // Clear batch selection
+    setLoading(true);
+    try {
+      const result = await invoke<Paper[]>('get_papers_by_group', { groupId: group.id });
+      setPapers(result);
+    } catch (error) {
+      console.error('Failed to load group papers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateGroup = async (name: string) => {
+    try {
+      await invoke('create_group', { name });
+      loadGroups();
+      showSnackbar(t('app.group_created') || "Group created", 'success');
+    } catch (error) {
+      console.error('Failed to create group:', error);
+      showSnackbar(t('app.error_creating_group') || "Failed to create group", 'error');
+    }
+  };
+
+  const handleRenameGroup = async (group: Group, name: string) => {
+    try {
+      await invoke('rename_group', { id: group.id, newName: name });
+      loadGroups();
+      // If renamed group is selected, update selection? 
+      // It's safer to just reload.
+      if (selectedGroup?.id === group.id) {
+        setSelectedGroup(prev => prev ? ({ ...prev, name }) : null);
+      }
+      showSnackbar(t('app.group_renamed') || "Group renamed", 'success');
+    } catch (error) {
+      console.error('Failed to rename group:', error);
+      showSnackbar(t('app.error_renaming_group') || "Failed to rename group", 'error');
+    }
+  };
+
+  const handleDeleteGroup = async (group: Group) => {
+    try {
+      await invoke('delete_group', { id: group.id });
+      loadGroups();
+      if (selectedGroup?.id === group.id) {
+        setSelectedGroup(null);
+        setPapers([]);
+      }
+      showSnackbar(t('app.group_deleted') || "Group deleted", 'success');
+    } catch (error) {
+      console.error('Failed to delete group:', error);
+      showSnackbar(t('app.error_deleting_group') || "Failed to delete group", 'error');
     }
   };
 
@@ -180,6 +247,36 @@ function App() {
     } catch (error) {
       console.error('Failed to translate:', error);
       alert('Failed to translate: ' + error);
+    }
+  };
+
+  const handleAddToGroup = async (paperIds: number[], groupId: number) => {
+    try {
+      await Promise.all(paperIds.map(pid => invoke('add_paper_to_group', { paperId: pid, groupId })));
+
+      showSnackbar(t('app.added_to_group') || "Added to group", 'success');
+      // If we are currently viewing this group, refresh
+      if (selectedGroup?.id === groupId) {
+        handleSelectGroup(selectedGroup);
+      }
+    } catch (error) {
+      console.error('Failed to add to group:', error);
+      showSnackbar(t('app.error_adding_to_group') || "Failed to add to group", 'error');
+    }
+  };
+
+  const handleRemoveFromGroup = async (paperIds: number[], groupId: number) => {
+    try {
+      await Promise.all(paperIds.map(pid => invoke('remove_paper_from_group', { paperId: pid, groupId })));
+
+      showSnackbar(t('app.removed_from_group') || "Removed from group", 'success');
+      // Refresh current view if it's the group
+      if (selectedGroup?.id === groupId) {
+        handleSelectGroup(selectedGroup);
+      }
+    } catch (error) {
+      console.error('Failed to remove from group:', error);
+      showSnackbar(t('app.error_removing_from_group') || "Failed to remove from group", 'error');
     }
   };
 
@@ -259,8 +356,14 @@ function App() {
       <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
         <Sidebar
           batches={batches}
+          groups={groups}
           onSelectBatch={handleSelectBatch}
+          onSelectGroup={handleSelectGroup}
           selectedBatchId={selectedBatch?.id || null}
+          selectedGroupId={selectedGroup?.id || null}
+          onCreateGroup={handleCreateGroup}
+          onRenameGroup={handleRenameGroup}
+          onDeleteGroup={handleDeleteGroup}
           onSettingsClick={() => setSettingsOpen(true)}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => {
@@ -295,12 +398,38 @@ function App() {
                   onTranslate={handleTranslate}
                   onReadPdf={handleReadPdf}
                   batch={selectedBatch}
+                  groups={groups}
+                  selectedGroupId={null}
+                  onAddToGroup={handleAddToGroup}
+                  onRemoveFromGroup={handleRemoveFromGroup}
+                  readerActive={!!(activePdf && !pdfCollapsed)}
+                  onContextSelect={setPendingContext}
+                />
+              ) : (
+                <Box sx={{ p: 3, mt: 5, textAlign: 'center' }}>
+                  <Typography variant="h6" color="textSecondary">
+                    {t('app.no_papers') || "No papers in this batch"}
+                  </Typography>
+                </Box>
+              )
+            ) : selectedGroup ? (
+              papers.length > 0 ? (
+                <PaperList
+                  papers={papers}
+                  onUpdateMetadata={handleUpdateMetadata}
+                  onTranslate={handleTranslate}
+                  onReadPdf={handleReadPdf}
+                  batch={null}
+                  groups={groups}
+                  selectedGroupId={selectedGroup.id}
+                  onAddToGroup={handleAddToGroup}
+                  onRemoveFromGroup={handleRemoveFromGroup}
                   readerActive={!!(activePdf && !pdfCollapsed)}
                 />
               ) : (
                 <Box sx={{ p: 3, mt: 5, textAlign: 'center' }}>
                   <Typography variant="h6" color="textSecondary">
-                    {t('app.no_batches')}
+                    {t('app.group_empty') || "This group is empty"}
                   </Typography>
                 </Box>
               )
@@ -337,6 +466,7 @@ function App() {
                 onClose={handleCollapseReader}
                 onPdfChange={(pdf) => setActivePdf(pdf)}
                 isResizing={isResizing}
+                onAddContext={setPendingContext}
               />
             </Box>
           )}
@@ -345,6 +475,8 @@ function App() {
         <RightSidebar
           hasCollapsedPdf={!!(activePaper && activePdf && pdfCollapsed)}
           onExpandReader={handleExpandReader}
+          pendingContext={pendingContext}
+          onContextHandled={() => setPendingContext(null)}
         />
       </Box>
 
