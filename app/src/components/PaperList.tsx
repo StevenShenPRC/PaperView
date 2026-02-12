@@ -85,7 +85,7 @@ const CollapsibleText: React.FC<{
                     color={isHighlighted ? 'text.primary' : 'text.secondary'}
                     sx={{
                         lineHeight: LINE_HEIGHT_EM,
-                        ...(isHighlighted && {
+                        ...((isHighlighted && !isCollapsed) && {
                             bgcolor: 'action.selected',
                             p: 1,
                             borderRadius: 1,

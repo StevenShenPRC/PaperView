@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Box, IconButton, Typography, CircularProgress,
@@ -18,7 +18,6 @@ import { Paper, PaperPdf } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 
-// Font loading fix
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -26,6 +25,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
 ).toString();
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface PDFReaderProps {
     paper: Paper;
@@ -40,37 +41,81 @@ interface JumpHistory {
     page: number;
 }
 
+/** Scale mode: 'page-width' | 'page-height' | number (percentage, 1.0 = 100%) */
+type ScaleMode = number | 'page-width' | 'page-height';
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+/** Padding around pages inside the scroll container (px) */
+const PAGE_PADDING = 40;
+/** Minimum zoom percentage */
+const MIN_SCALE = 0.1;
+/** Maximum zoom percentage */
+const MAX_SCALE = 5.0;
+/** Zoom step per click / wheel tick */
+const ZOOM_STEP = 0.1;
+/** Minimum wheel delta to trigger zoom */
+const WHEEL_THRESHOLD = 5;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Clamp a numeric scale to [MIN_SCALE, MAX_SCALE], rounded to 1 decimal */
+const clampScale = (val: number): number =>
+    Math.min(Math.max(Math.round(val * 10) / 10, MIN_SCALE), MAX_SCALE);
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
 const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange, isResizing = false }) => {
     const { t } = useTranslation();
     const theme = useTheme();
 
+    // ── PDF document state ────────────────────────────────────────────────
     const [numPages, setNumPages] = useState<number | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageInput, setPageInput] = useState("1");
-    // Scale state: number or 'page-width' or 'page-height'
-    const [scale, setScale] = useState<number | 'page-width' | 'page-height'>('page-width');
-    const [customScaleInput, setCustomScaleInput] = useState("Fit Width");
-    const [isScaleInputFocused, setIsScaleInputFocused] = useState(false);
-
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // ── Navigation state ──────────────────────────────────────────────────
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageInput, setPageInput] = useState("1");
+    const [jumpHistory, setJumpHistory] = useState<JumpHistory[]>([]);
+
+    // ── Scale state ───────────────────────────────────────────────────────
+    const [scale, setScale] = useState<ScaleMode>('page-width');
+    const [customScaleInput, setCustomScaleInput] = useState("Fit Width");
+    const [isScaleInputFocused, setIsScaleInputFocused] = useState(false);
+
+    // ── Container dimensions ──────────────────────────────────────────────
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
 
-    const [jumpHistory, setJumpHistory] = useState<JumpHistory[]>([]);
+    // ── Derived: compute the actual width to pass to react-pdf <Page> ────
+    // All scale modes are resolved to a single `width` value.
+    //   - 'page-width':  fill the container width
+    //   - 'page-height': we pass this as height prop instead
+    //   - number (1.0 = 100%): multiply the base (fit-width) size
+    const availableWidth = Math.max(containerWidth - PAGE_PADDING, 100);
+    const availableHeight = Math.max(containerHeight - PAGE_PADDING, 100);
 
-    // Watch container resize
+    const pageWidth = useMemo(() => {
+        if (scale === 'page-width') return availableWidth;
+        if (scale === 'page-height') return undefined; // height-driven
+        // Numeric scale: relative to fit-width. 1.0 = fit width, 2.0 = 2× fit width
+        return availableWidth * scale;
+    }, [scale, availableWidth]);
+
+    const pageHeight = useMemo(() => {
+        if (scale === 'page-height') return availableHeight;
+        return undefined;
+    }, [scale, availableHeight]);
+
+    // ── Observe container resize ──────────────────────────────────────────
     useEffect(() => {
         if (!containerRef.current) return;
         const observer = new ResizeObserver((entries) => {
-            if (entries[0]) {
-                const rect = entries[0].contentRect;
-                // Leave space for scrollbar to avoid jitter if necessary, though
-                // usually simple resize observation is enough. The jitter often comes from
-                // the scrollbar appearing/disappearing.
+            const rect = entries[0]?.contentRect;
+            if (rect) {
                 setContainerWidth(rect.width);
                 setContainerHeight(rect.height);
             }
@@ -79,7 +124,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
         return () => observer.disconnect();
     }, []);
 
-    // Load PDF
+    // ── Load PDF binary ───────────────────────────────────────────────────
     useEffect(() => {
         let currentUrl: string | null = null;
         setJumpHistory([]);
@@ -111,143 +156,152 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
         };
     }, [pdf]);
 
-    // Update customScaleInput when scale changes
+    // ── Sync scale display text ───────────────────────────────────────────
     useEffect(() => {
-        if (isScaleInputFocused) return; // Don't update while editing
-
-        if (scale === 'page-width') {
-            setCustomScaleInput(t('app.fit_width'));
-        } else if (scale === 'page-height') {
-            setCustomScaleInput(t('app.fit_height'));
-        } else {
-            setCustomScaleInput(`${Math.round(scale * 100)}%`);
-        }
+        if (isScaleInputFocused) return;
+        if (scale === 'page-width') setCustomScaleInput(t('app.fit_width'));
+        else if (scale === 'page-height') setCustomScaleInput(t('app.fit_height'));
+        else setCustomScaleInput(`${Math.round(scale * 100)}%`);
     }, [scale, t, isScaleInputFocused]);
 
-    // Sync pageInput with currentPage
+    // ── Sync page input text ──────────────────────────────────────────────
     useEffect(() => {
         setPageInput(String(currentPage));
     }, [currentPage]);
 
-    const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-        setNumPages(numPages);
-    };
+    // ── Zoom handlers ─────────────────────────────────────────────────────
+    const getNumericScale = useCallback((): number => {
+        return typeof scale === 'number' ? scale : 1.0;
+    }, [scale]);
 
-    const handleZoomIn = () => {
-        // Step 10%, round to 1 decimal
-        let currentVal = typeof scale === 'string' ? 1.0 : scale;
-        // If fit-width/height, we don't know exact start, default to 100% then zoom
-        // Or better: try to estimate from container width? difficult without page width.
-        // We accept 1.0 jump for now.
-        const newVal = Math.min(Math.round((currentVal + 0.1) * 10) / 10, 5.0);
-        setScale(newVal);
-    };
+    const handleZoomIn = useCallback(() => {
+        setScale(clampScale(getNumericScale() + ZOOM_STEP));
+    }, [getNumericScale]);
 
-    const handleZoomOut = () => {
-        let currentVal = typeof scale === 'string' ? 1.0 : scale;
-        const newVal = Math.max(Math.round((currentVal - 0.1) * 10) / 10, 0.1);
-        setScale(newVal);
-    };
+    const handleZoomOut = useCallback(() => {
+        setScale(clampScale(getNumericScale() - ZOOM_STEP));
+    }, [getNumericScale]);
 
-    const handleScaleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleWheelZoom = useCallback((e: React.WheelEvent) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        const delta = e.deltaY;
+        if (Math.abs(delta) > WHEEL_THRESHOLD) {
+            const direction = delta > 0 ? -ZOOM_STEP : ZOOM_STEP;
+            const newVal = clampScale(getNumericScale() + direction);
+            if (newVal !== getNumericScale()) setScale(newVal);
+        }
+    }, [getNumericScale]);
+
+    // ── Scale input handlers ──────────────────────────────────────────────
+    const handleScaleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
         setIsScaleInputFocused(true);
         e.target.select();
+        setCustomScaleInput(typeof scale === 'string' ? "100" : `${Math.round(scale * 100)}`);
+    }, [scale]);
 
-        // If current is Fit Width/Height, show approximate or default 100% just for editing start
-        if (typeof scale === 'string') {
-            // Ideally we'd know the real scale. 
-            // Without it, maybe just show empty or 100?
-            setCustomScaleInput("100");
-        } else {
-            setCustomScaleInput(`${Math.round(scale * 100)}`);
-        }
-    };
-
-    const handleScaleInputBlur = () => {
-        setIsScaleInputFocused(false);
-        handleScaleInputCommit();
-    };
-
-    const handleScaleInputCommit = () => {
+    const handleScaleInputCommit = useCallback(() => {
         const val = parseFloat(customScaleInput.replace('%', ''));
         if (!isNaN(val)) {
-            const clamped = Math.max(10, Math.min(val, 500));
-            setScale(clamped / 100);
+            setScale(Math.max(10, Math.min(val, 500)) / 100);
         } else {
-            // Revert
+            // Revert display
             if (scale === 'page-width') setCustomScaleInput(t('app.fit_width'));
             else if (scale === 'page-height') setCustomScaleInput(t('app.fit_height'));
             else setCustomScaleInput(`${Math.round(scale * 100)}%`);
         }
-    };
+    }, [customScaleInput, scale, t]);
 
-    const handlePageInputCommit = () => {
+    const handleScaleInputBlur = useCallback(() => {
+        setIsScaleInputFocused(false);
+        handleScaleInputCommit();
+    }, [handleScaleInputCommit]);
+
+    // ── Page navigation handlers ──────────────────────────────────────────
+    const scrollToPage = useCallback((pageNum: number) => {
+        document.getElementById(`pdf-page-${pageNum}`)
+            ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }, []);
+
+    const handlePageInputCommit = useCallback(() => {
         const val = parseInt(pageInput);
         if (!isNaN(val) && val >= 1 && val <= (numPages || 1)) {
             scrollToPage(val);
         } else {
             setPageInput(String(currentPage));
         }
-    };
+    }, [pageInput, numPages, currentPage, scrollToPage]);
 
-    const scrollToPage = (pageNum: number) => {
-        const pageEl = document.getElementById(`pdf-page-${pageNum}`);
-        if (pageEl) {
-            pageEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }
-    };
-
-    const handlePrevPage = () => {
+    const handlePrevPage = useCallback(() => {
         if (currentPage > 1) scrollToPage(currentPage - 1);
-    };
+    }, [currentPage, scrollToPage]);
 
-    const handleNextPage = () => {
+    const handleNextPage = useCallback(() => {
         if (numPages && currentPage < numPages) scrollToPage(currentPage + 1);
-    };
+    }, [numPages, currentPage, scrollToPage]);
 
-    // Track scroll to update current page
-    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    // ── Scroll tracking (current page detection) ──────────────────────────
+    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
-        const pageElements = target.querySelectorAll('.pdf-page-container');
-        let current = 1;
+        const pages = target.querySelectorAll('.pdf-page-container');
+        let detected = 1;
+        const midpoint = target.scrollTop + target.clientHeight / 2;
 
-        for (let i = 0; i < pageElements.length; i++) {
-            const el = pageElements[i] as HTMLElement;
-            if (el.offsetTop <= target.scrollTop + target.clientHeight / 2) {
-                current = i + 1;
+        for (let i = 0; i < pages.length; i++) {
+            if ((pages[i] as HTMLElement).offsetTop <= midpoint) {
+                detected = i + 1;
             } else {
                 break;
             }
         }
-        if (current !== currentPage) {
-            setCurrentPage(current);
-        }
-    };
+        if (detected !== currentPage) setCurrentPage(detected);
+    }, [currentPage]);
 
-    const handleLinkClick = (destPage: number) => {
+    // ── Internal link handling ─────────────────────────────────────────────
+    const handleLinkClick = useCallback((destPage: number) => {
         if (containerRef.current) {
-            setJumpHistory([{
+            setJumpHistory(prev => [...prev, {
                 page: currentPage,
                 scrollTop: containerRef.current!.scrollTop
             }]);
         }
         scrollToPage(destPage);
-    };
+    }, [currentPage, scrollToPage]);
 
-    const handleJumpBack = () => {
+    const handleJumpBack = useCallback(() => {
         if (jumpHistory.length === 0) return;
         const last = jumpHistory[jumpHistory.length - 1];
         setJumpHistory(prev => prev.slice(0, -1));
-
         if (containerRef.current) {
             containerRef.current.scrollTop = last.scrollTop;
             setCurrentPage(last.page);
         }
-    };
+    }, [jumpHistory]);
 
+    // ── Internal link click capture on page ───────────────────────────────
+    const handlePageClickCapture = useCallback((e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const anchor = target.closest('a');
+        if (!anchor) return;
+
+        const href = anchor.getAttribute('href');
+        if (href?.startsWith('#page=')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const match = href.match(/#page=(\d+)/);
+            if (match?.[1]) handleLinkClick(parseInt(match[1]));
+        } else if (target.closest('.react-pdf__Page__annotationLayer')) {
+            handleLinkClick(currentPage);
+        }
+    }, [currentPage, handleLinkClick]);
+
+    // ── Determine if content will overflow (for centering logic) ──────────
+    const contentOverflows = pageWidth !== undefined && pageWidth > availableWidth;
+
+    // ── Render ────────────────────────────────────────────────────────────
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default', position: 'relative' }}>
-            {/* Top bar with file selector */}
+            {/* ── Top Bar: PDF file selector ── */}
             <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Toolbar variant="dense" sx={{ minHeight: 48, gap: 2 }}>
                     <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -283,124 +337,100 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
                 </Toolbar>
             </AppBar>
 
-            {/* Main Content (Continuous Scroll) */}
+            {/* ── Scroll Container ── */}
             <Box
                 ref={containerRef}
                 onScroll={handleScroll}
-                onWheel={(e) => {
-                    if (e.ctrlKey) {
-                        e.preventDefault();
-                        const currentScale = typeof scale === 'string' ? 1.0 : scale;
-                        // Accumulate delta to avoid jittery updates and ensure 10% steps
-                        // Standard mouse wheel delta is usually +/- 100 or +/- 120
-                        // We strictly want 0.1 change per "click" roughly
-                        const delta = e.deltaY;
-                        if (Math.abs(delta) > 5) { // Threshold
-                            const direction = delta > 0 ? -0.1 : 0.1;
-                            const newVal = Math.min(Math.max(Math.round((currentScale + direction) * 10) / 10, 0.1), 5.0);
-                            if (newVal !== currentScale) {
-                                setScale(newVal);
-                            }
-                        }
-                    }
-                }}
+                onWheel={handleWheelZoom}
                 sx={{
                     flexGrow: 1,
                     overflowY: 'auto',
-                    overflowX: 'hidden', // Prevent horizontal scrollbar from layout shift if possible
-                    scrollbarGutter: 'stable', // Fix jitter
+                    overflowX: 'auto',
+                    scrollbarGutter: 'stable',
                     bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.200',
+                    p: 2,
+                    scrollBehavior: 'smooth',
+                }}
+            >
+                {/* Inner wrapper: centers content when smaller than viewport,
+                    expands naturally when larger to allow horizontal scroll */}
+                <Box sx={{
+                    minWidth: '100%',
+                    width: contentOverflows ? 'fit-content' : '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    p: 2,
-                    scrollBehavior: 'smooth'
-                }}
-            >
-                {loading && (
-                    <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
-                        <CircularProgress />
-                    </Box>
-                )}
+                    minHeight: '100%',
+                }}>
+                    {loading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
+                            <CircularProgress />
+                        </Box>
+                    )}
 
-                {error && (
-                    <Typography color="error" sx={{ mt: 5, textAlign: 'center' }}>
-                        Error loading PDF: {error}
-                    </Typography>
-                )}
+                    {error && (
+                        <Typography color="error" sx={{ mt: 5, textAlign: 'center' }}>
+                            Error loading PDF: {error}
+                        </Typography>
+                    )}
 
-                {pdfUrl && !isResizing && (
-                    <Document
-                        file={pdfUrl}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        onLoadError={(err) => setError(err.message)}
-                        onItemClick={({ pageNumber }) => {
-                            if (pageNumber && pageNumber !== currentPage) {
-                                handleLinkClick(pageNumber);
-                            }
-                        }}
-                        loading={null}
-                    >
-                        {Array.from(new Array(numPages), (_, index) => {
-                            const pageNum = index + 1;
-                            return (
-                                <Box
-                                    id={`pdf-page-${pageNum}`}
-                                    key={`page_${pageNum}`}
-                                    className="pdf-page-container"
-                                    sx={{ mb: 2 }}
-                                    onClickCapture={(e) => {
-                                        const target = e.target as HTMLElement;
-                                        const anchor = target.closest('a');
-                                        if (anchor) {
-                                            const href = anchor.getAttribute('href');
-                                            if (href && href.startsWith('#page=')) {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                const match = href.match(/#page=(\d+)/);
-                                                if (match && match[1]) {
-                                                    handleLinkClick(parseInt(match[1]));
-                                                }
-                                            } else if (target.closest('.react-pdf__Page__annotationLayer')) {
-                                                handleLinkClick(currentPage);
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <Box sx={{ boxShadow: 3, bgcolor: 'background.paper' }}>
-                                        <Page
-                                            pageNumber={pageNum}
-                                            width={scale === 'page-width' ? (containerWidth - 40) : undefined}
-                                            height={scale === 'page-height' ? (containerHeight - 40) : undefined}
-                                            scale={typeof scale === 'number' ? scale : 1}
-                                            renderTextLayer={true}
-                                            renderAnnotationLayer={true}
-                                        />
+                    {pdfUrl && !isResizing && (
+                        <Document
+                            file={pdfUrl}
+                            onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+                            onLoadError={(err) => setError(err.message)}
+                            onItemClick={({ pageNumber }) => {
+                                if (pageNumber && pageNumber !== currentPage) {
+                                    handleLinkClick(pageNumber);
+                                }
+                            }}
+                            loading={null}
+                        >
+                            {Array.from({ length: numPages ?? 0 }, (_, i) => {
+                                const pageNum = i + 1;
+                                return (
+                                    <Box
+                                        id={`pdf-page-${pageNum}`}
+                                        key={`page_${pageNum}`}
+                                        className="pdf-page-container"
+                                        sx={{ mb: 2 }}
+                                        onClickCapture={handlePageClickCapture}
+                                    >
+                                        <Box sx={{ boxShadow: 3, bgcolor: 'background.paper' }}>
+                                            <Page
+                                                pageNumber={pageNum}
+                                                width={pageWidth}
+                                                height={pageHeight}
+                                                renderTextLayer={true}
+                                                renderAnnotationLayer={true}
+                                            />
+                                        </Box>
                                     </Box>
-                                </Box>
-                            );
-                        })}
-                    </Document>
-                )}
+                                );
+                            })}
+                        </Document>
+                    )}
 
-                {isResizing && (
-                    <Box sx={{
-                        height: '100%',
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'action.hover',
-                        borderRadius: 2,
-                        border: '2px dashed',
-                        borderColor: 'divider'
-                    }}>
-                        <CircularProgress />
-                    </Box>
-                )}
+                    {isResizing && (
+                        <Box sx={{
+                            height: '100%',
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'action.hover',
+                            borderRadius: 2,
+                            border: '2px dashed',
+                            borderColor: 'divider',
+                            flexGrow: 1,
+                        }}>
+                            <CircularProgress />
+                        </Box>
+                    )}
+                </Box>
             </Box>
 
-            {/* Floating Controls */}
+            {/* ── Floating Controls ── */}
             <Fade in={!loading && !!pdfUrl}>
                 <MuiPaper
                     elevation={6}
@@ -421,7 +451,7 @@ const PDFReader: React.FC<PDFReaderProps> = ({ paper, pdf, onClose, onPdfChange,
                         borderColor: 'divider',
                         gap: 1,
                         zIndex: 100,
-                        maxWidth: '90%'
+                        maxWidth: '90%',
                     }}
                 >
                     {/* Jump Back */}

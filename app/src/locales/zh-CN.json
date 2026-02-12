@@ -97,7 +97,10 @@
         "view_original": "查看原文",
         "warning": "警告",
         "zoom_in": "放大",
-        "zoom_out": "缩小"
+        "zoom_out": "缩小",
+        "semantic_search": "语义搜索 (RAG)",
+        "fulltext_search": "全文搜索 (FTS)",
+        "no_results": "没有找到相关结果"
     },
     "common": {
         "active": "使用中",

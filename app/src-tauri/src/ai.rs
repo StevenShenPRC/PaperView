@@ -239,3 +239,81 @@ pub async fn fetch_models(
     
     Ok(json_resp.data.into_iter().map(|m| m.id).collect())
 }
+#[derive(Serialize)]
+struct EmbeddingRequest {
+    model: String,
+    input: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    dimensions: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output_dimensionality: Option<u32>,
+}
+
+#[derive(Deserialize, Debug)]
+struct EmbeddingResponse {
+    data: Vec<EmbeddingData>,
+}
+
+#[derive(Deserialize, Debug)]
+struct EmbeddingData {
+    embedding: Vec<f32>,
+}
+
+pub async fn get_embeddings(
+    base_url: String,
+    api_key: String,
+    model: String,
+    input: String,
+    proxy_mode: String,
+    proxy_url: Option<String>,
+    additional_headers: Option<HashMap<String, String>>,
+    dimensions: Option<u32>,
+) -> Result<Vec<f32>, String> {
+    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref())
+        .map_err(|e| e.to_string())?;
+
+    // Normalize URL for embeddings
+    // Usually base_url/v1/embeddings
+    // Reuse normalization logic or simple append?
+    // normalize_chat_url handles /chat/completions. 
+    // Let's create a helper or just do simple logic here assuming standard structure.
+    let url = if base_url.ends_with("/v1") {
+        format!("{}/embeddings", base_url)
+    } else if base_url.ends_with("/") {
+        format!("{}v1/embeddings", base_url)
+    } else {
+        format!("{}/v1/embeddings", base_url)
+    };
+
+    let body = EmbeddingRequest {
+        model,
+        input,
+        dimensions,
+        output_dimensionality: dimensions,
+    };
+
+    let mut request_builder = client.post(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json");
+
+    if let Some(headers) = additional_headers {
+        for (k, v) in headers {
+            request_builder = request_builder.header(k, v);
+        }
+    }
+
+    let resp = request_builder.json(&body).send().await.map_err(|e| format!("Embedding request failed: {}", e))?;
+    
+    if !resp.status().is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        return Err(format!("Embedding API error: {}", text));
+    }
+
+    let json_resp: EmbeddingResponse = resp.json().await.map_err(|e| format!("Failed to parse embedding response: {}", e))?;
+    
+    if let Some(data) = json_resp.data.first() {
+        Ok(data.embedding.clone())
+    } else {
+        Err("No embedding data returned".to_string())
+    }
+}

@@ -99,7 +99,10 @@
         "view_original": "View Original",
         "warning": "Warning",
         "zoom_in": "Zoom In",
-        "zoom_out": "Zoom Out"
+        "zoom_out": "Zoom Out",
+        "semantic_search": "Semantic Search (RAG)",
+        "fulltext_search": "Full-text Search (FTS)",
+        "no_results": "No results found"
     },
     "common": {
         "active": "Active",

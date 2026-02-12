@@ -1,1 +1,7 @@
-{}
+{
+    "rust-analyzer.server.path": "C:\\Users\\Steven\\.cargo\\bin\\rust-analyzer.exe",
+    "rust-analyzer.cargo.executable": "C:\\Users\\Steven\\.cargo\\bin\\cargo.exe",
+    "terminal.integrated.env.windows": {
+        "PATH": "${env:PATH};C:\\Users\\Steven\\.cargo\\bin"
+    }
+}

@@ -49,6 +49,8 @@ const AiSettings: React.FC<AiSettingsProps> = ({
     // Models State
     const [modelsList, setModelsList] = useState<string[]>([]);
     const [defaultModel, setDefaultModel] = useState('');
+    const [embeddingModel, setEmbeddingModel] = useState('');
+    const [embeddingDimensions, setEmbeddingDimensions] = useState<number | ''>(1536);
 
     const [headers, setHeaders] = useState(''); // JSON string
     const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -65,6 +67,8 @@ const AiSettings: React.FC<AiSettingsProps> = ({
             setApiKey(provider.api_key);
             setModelsList(provider.models);
             setDefaultModel(provider.default_model || provider.models[0] || '');
+            setEmbeddingModel(provider.embedding_model || '');
+            setEmbeddingDimensions(provider.embedding_dimensions || 1536);
             setHeaders(provider.additional_headers ? JSON.stringify(provider.additional_headers, null, 2) : '');
         } else {
             setEditingProvider(null);
@@ -73,6 +77,8 @@ const AiSettings: React.FC<AiSettingsProps> = ({
             setApiKey('');
             setModelsList([]);
             setDefaultModel('');
+            setEmbeddingModel('');
+            setEmbeddingDimensions(1536);
             setHeaders('');
         }
         setOpenDialog(true);
@@ -99,6 +105,8 @@ const AiSettings: React.FC<AiSettingsProps> = ({
             api_key: apiKey.trim(),
             models: modelsList,
             default_model: defaultModel,
+            embedding_model: embeddingModel,
+            embedding_dimensions: typeof embeddingDimensions === 'number' ? embeddingDimensions : undefined,
             additional_headers: parsedHeaders
         };
 
@@ -315,6 +323,33 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                                 </span>
                             </Tooltip>
                         </Box>
+
+                        <FormControl fullWidth size="small">
+                            <InputLabel>{t('settings.embedding_model') || 'Embedding Model'}</InputLabel>
+                            <Select
+                                label={t('settings.embedding_model') || 'Embedding Model'}
+                                value={embeddingModel}
+                                onChange={(e) => setEmbeddingModel(e.target.value)}
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {modelsList.map((m) => (
+                                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            label={t('settings.embedding_dimensions') || 'Embedding Dimensions'}
+                            value={embeddingDimensions}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                setEmbeddingDimensions(isNaN(val) ? '' : val);
+                            }}
+                            fullWidth
+                            size="small"
+                            type="number"
+                            helperText={t('settings.dimensions_hint') || "Standard is 1536. Only needed if the model supports custom dimensions (v3 models)."}
+                        />
 
                         <Accordion elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>

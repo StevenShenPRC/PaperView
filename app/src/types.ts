@@ -36,6 +36,8 @@ export interface AiProvider {
     api_key: string;
     models: string[];
     default_model?: string;
+    embedding_model?: string;
+    embedding_dimensions?: number;
     additional_headers?: Record<string, string>;
 }
 
@@ -46,4 +48,34 @@ export interface AppSettings {
     active_ai_provider?: string;
     server_port?: number;
     theme_mode: 'light' | 'dark' | 'system';
+}
+
+export interface ChatMessage {
+    id?: number;
+    session_id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: any; // JSONB
+    created_at: string;
+}
+
+export interface ChatSession {
+    id: string;
+    title: string;
+    model: string;
+    metadata?: any;
+    created_at: string;
+}
+
+export interface SearchResult {
+    message_id: number;
+    session_id: string;
+    role: string;
+    distance: number;
+    content: any;
+    created_at: string;
+}
+
+export interface HistorySearchResults {
+    rag: SearchResult[];
+    fts: SearchResult[];
 }
