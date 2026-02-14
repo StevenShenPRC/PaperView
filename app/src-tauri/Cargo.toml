@@ -1,6 +1,6 @@
 [package]
 name = "paperview"
-version = "0.1.0"
+version = "0.1.1"
 description = "PaperView - AI-powered Paper Manager"
 authors = ["you"]
 edition = "2021"
@@ -36,5 +36,6 @@ image = "0.24"
 uuid = { version = "1.7", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 
 

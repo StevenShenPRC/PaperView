@@ -4,6 +4,8 @@ export interface Paper {
     journalName: string;
     issueVolume: string;
     issueDate: string;
+    /** Publication Date or Import Date */
+    date?: string;
     title: string;
     doi: string;
     abstract: string;

@@ -1,0 +1,1499 @@
+{
+    "id": "https://openalex.org/W3174520255",
+    "doi": "https://doi.org/10.1038/s41598-021-92947-w",
+    "title": "Natural variability in air–sea gas transfer efficiency of CO2",
+    "display_name": "Natural variability in air–sea gas transfer efficiency of CO2",
+    "publication_year": 2021,
+    "publication_date": "2021-06-30",
+    "ids": {
+        "openalex": "https://openalex.org/W3174520255",
+        "doi": "https://doi.org/10.1038/s41598-021-92947-w",
+        "mag": "3174520255",
+        "pmid": "https://pubmed.ncbi.nlm.nih.gov/34193883"
+    },
+    "language": "en",
+    "primary_location": {
+        "id": "doi:10.1038/s41598-021-92947-w",
+        "is_oa": true,
+        "landing_page_url": "https://doi.org/10.1038/s41598-021-92947-w",
+        "pdf_url": "https://www.nature.com/articles/s41598-021-92947-w.pdf",
+        "source": {
+            "id": "https://openalex.org/S196734849",
+            "display_name": "Scientific Reports",
+            "issn_l": "2045-2322",
+            "issn": [
+                "2045-2322"
+            ],
+            "is_oa": true,
+            "is_in_doaj": true,
+            "is_core": true,
+            "host_organization": "https://openalex.org/P4310319908",
+            "host_organization_name": "Nature Portfolio",
+            "host_organization_lineage": [
+                "https://openalex.org/P4310319908",
+                "https://openalex.org/P4310319965"
+            ],
+            "host_organization_lineage_names": [
+                "Nature Portfolio",
+                "Springer Nature"
+            ],
+            "type": "journal"
+        },
+        "license": "cc-by",
+        "license_id": "https://openalex.org/licenses/cc-by",
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Scientific Reports",
+        "raw_type": "journal-article"
+    },
+    "type": "article",
+    "indexed_in": [
+        "crossref",
+        "doaj",
+        "pubmed"
+    ],
+    "open_access": {
+        "is_oa": true,
+        "oa_status": "gold",
+        "oa_url": "https://www.nature.com/articles/s41598-021-92947-w.pdf",
+        "any_repository_has_fulltext": true
+    },
+    "authorships": [
+        {
+            "author_position": "first",
+            "author": {
+                "id": "https://openalex.org/A5013831292",
+                "display_name": "Mingxi Yang",
+                "orcid": "https://orcid.org/0000-0002-8321-5984"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": true,
+            "raw_author_name": "Mingxi Yang",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK. miya@pml.ac.uk",
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK. miya@pml.ac.uk",
+                    "institution_ids": []
+                },
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "middle",
+            "author": {
+                "id": "https://openalex.org/A5018359634",
+                "display_name": "Tim Smyth",
+                "orcid": "https://orcid.org/0000-0003-0659-1422"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Timothy J. Smyth",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "middle",
+            "author": {
+                "id": "https://openalex.org/A5033530484",
+                "display_name": "Vassilis Kitidis",
+                "orcid": "https://orcid.org/0000-0003-3949-3802"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Vassilis Kitidis",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "middle",
+            "author": {
+                "id": "https://openalex.org/A5053246529",
+                "display_name": "Ian Brown",
+                "orcid": "https://orcid.org/0000-0001-7423-2064"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Ian J. Brown",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "middle",
+            "author": {
+                "id": "https://openalex.org/A5060609395",
+                "display_name": "Charel Wohl",
+                "orcid": "https://orcid.org/0000-0002-6592-6037"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Charel Wohl",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "middle",
+            "author": {
+                "id": "https://openalex.org/A5014286818",
+                "display_name": "Margaret J. Yelland",
+                "orcid": "https://orcid.org/0000-0002-0936-4957"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I197940685",
+                    "display_name": "National Oceanography Centre",
+                    "ror": "https://ror.org/00874hx02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I197940685"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Margaret J. Yelland",
+            "raw_affiliation_strings": [
+                "National Oceanography Centre, European Way, Southampton, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "National Oceanography Centre, European Way, Southampton, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I197940685"
+                    ]
+                }
+            ]
+        },
+        {
+            "author_position": "last",
+            "author": {
+                "id": "https://openalex.org/A5085586477",
+                "display_name": "Thomas G. Bell",
+                "orcid": "https://orcid.org/0000-0002-4108-7048"
+            },
+            "institutions": [
+                {
+                    "id": "https://openalex.org/I2802566253",
+                    "display_name": "Plymouth Marine Laboratory",
+                    "ror": "https://ror.org/05av9mn02",
+                    "country_code": "GB",
+                    "type": "facility",
+                    "lineage": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ],
+            "countries": [
+                "GB"
+            ],
+            "is_corresponding": false,
+            "raw_author_name": "Thomas G. Bell",
+            "raw_affiliation_strings": [
+                "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK"
+            ],
+            "affiliations": [
+                {
+                    "raw_affiliation_string": "Plymouth Marine Laboratory, Prospect Place, Plymouth, UK",
+                    "institution_ids": [
+                        "https://openalex.org/I2802566253"
+                    ]
+                }
+            ]
+        }
+    ],
+    "institutions": [],
+    "countries_distinct_count": 1,
+    "institutions_distinct_count": 7,
+    "corresponding_author_ids": [
+        "https://openalex.org/A5013831292"
+    ],
+    "corresponding_institution_ids": [
+        "https://openalex.org/I2802566253"
+    ],
+    "apc_list": {
+        "value": 1890,
+        "currency": "EUR",
+        "value_usd": 2190
+    },
+    "apc_paid": {
+        "value": 1890,
+        "currency": "EUR",
+        "value_usd": 2190
+    },
+    "fwci": 3.33379722,
+    "has_fulltext": true,
+    "cited_by_count": 28,
+    "citation_normalized_percentile": {
+        "value": 0.9151274,
+        "is_in_top_1_percent": false,
+        "is_in_top_10_percent": true
+    },
+    "cited_by_percentile_year": {
+        "min": 93,
+        "max": 99
+    },
+    "biblio": {
+        "volume": "11",
+        "issue": "1",
+        "first_page": "13584",
+        "last_page": "13584"
+    },
+    "is_retracted": false,
+    "is_paratext": false,
+    "is_xpac": false,
+    "primary_topic": {
+        "id": "https://openalex.org/T11588",
+        "display_name": "Atmospheric and Environmental Gas Dynamics",
+        "score": 0.999499976634979,
+        "subfield": {
+            "id": "https://openalex.org/subfields/2306",
+            "display_name": "Global and Planetary Change"
+        },
+        "field": {
+            "id": "https://openalex.org/fields/23",
+            "display_name": "Environmental Science"
+        },
+        "domain": {
+            "id": "https://openalex.org/domains/3",
+            "display_name": "Physical Sciences"
+        }
+    },
+    "topics": [
+        {
+            "id": "https://openalex.org/T11588",
+            "display_name": "Atmospheric and Environmental Gas Dynamics",
+            "score": 0.999499976634979,
+            "subfield": {
+                "id": "https://openalex.org/subfields/2306",
+                "display_name": "Global and Planetary Change"
+            },
+            "field": {
+                "id": "https://openalex.org/fields/23",
+                "display_name": "Environmental Science"
+            },
+            "domain": {
+                "id": "https://openalex.org/domains/3",
+                "display_name": "Physical Sciences"
+            }
+        },
+        {
+            "id": "https://openalex.org/T10255",
+            "display_name": "Oceanographic and Atmospheric Processes",
+            "score": 0.999199986457825,
+            "subfield": {
+                "id": "https://openalex.org/subfields/1910",
+                "display_name": "Oceanography"
+            },
+            "field": {
+                "id": "https://openalex.org/fields/19",
+                "display_name": "Earth and Planetary Sciences"
+            },
+            "domain": {
+                "id": "https://openalex.org/domains/3",
+                "display_name": "Physical Sciences"
+            }
+        },
+        {
+            "id": "https://openalex.org/T10032",
+            "display_name": "Marine and coastal ecosystems",
+            "score": 0.998300015926361,
+            "subfield": {
+                "id": "https://openalex.org/subfields/1910",
+                "display_name": "Oceanography"
+            },
+            "field": {
+                "id": "https://openalex.org/fields/19",
+                "display_name": "Earth and Planetary Sciences"
+            },
+            "domain": {
+                "id": "https://openalex.org/domains/3",
+                "display_name": "Physical Sciences"
+            }
+        }
+    ],
+    "keywords": [
+        {
+            "id": "https://openalex.org/keywords/eddy-covariance",
+            "display_name": "Eddy covariance",
+            "score": 0.683510065078735
+        },
+        {
+            "id": "https://openalex.org/keywords/environmental-science",
+            "display_name": "Environmental science",
+            "score": 0.663975179195404
+        },
+        {
+            "id": "https://openalex.org/keywords/wind-speed",
+            "display_name": "Wind speed",
+            "score": 0.606925129890442
+        },
+        {
+            "id": "https://openalex.org/keywords/transect",
+            "display_name": "Transect",
+            "score": 0.599912106990814
+        },
+        {
+            "id": "https://openalex.org/keywords/atmosphere",
+            "display_name": "Atmosphere (unit)",
+            "score": 0.569478332996368
+        },
+        {
+            "id": "https://openalex.org/keywords/flux",
+            "display_name": "Flux (metallurgy)",
+            "score": 0.563765704631805
+        },
+        {
+            "id": "https://openalex.org/keywords/atmospheric-sciences",
+            "display_name": "Atmospheric sciences",
+            "score": 0.506236732006073
+        },
+        {
+            "id": "https://openalex.org/keywords/seawater",
+            "display_name": "Seawater",
+            "score": 0.464795053005219
+        },
+        {
+            "id": "https://openalex.org/keywords/meteorology",
+            "display_name": "Meteorology",
+            "score": 0.35810661315918
+        },
+        {
+            "id": "https://openalex.org/keywords/geology",
+            "display_name": "Geology",
+            "score": 0.222544193267822
+        },
+        {
+            "id": "https://openalex.org/keywords/physics",
+            "display_name": "Physics",
+            "score": 0.183925628662109
+        },
+        {
+            "id": "https://openalex.org/keywords/chemistry",
+            "display_name": "Chemistry",
+            "score": 0.17756462097168
+        },
+        {
+            "id": "https://openalex.org/keywords/oceanography",
+            "display_name": "Oceanography",
+            "score": 0.142250061035156
+        }
+    ],
+    "concepts": [
+        {
+            "id": "https://openalex.org/C35187779",
+            "wikidata": "https://www.wikidata.org/wiki/Q5336709",
+            "display_name": "Eddy covariance",
+            "level": 3,
+            "score": 0.683510065078735
+        },
+        {
+            "id": "https://openalex.org/C39432304",
+            "wikidata": "https://www.wikidata.org/wiki/Q188847",
+            "display_name": "Environmental science",
+            "level": 0,
+            "score": 0.663975179195404
+        },
+        {
+            "id": "https://openalex.org/C161067210",
+            "wikidata": "https://www.wikidata.org/wiki/Q1464943",
+            "display_name": "Wind speed",
+            "level": 2,
+            "score": 0.606925129890442
+        },
+        {
+            "id": "https://openalex.org/C69661492",
+            "wikidata": "https://www.wikidata.org/wiki/Q1447141",
+            "display_name": "Transect",
+            "level": 2,
+            "score": 0.599912106990814
+        },
+        {
+            "id": "https://openalex.org/C65440619",
+            "wikidata": "https://www.wikidata.org/wiki/Q177974",
+            "display_name": "Atmosphere (unit)",
+            "level": 2,
+            "score": 0.569478332996368
+        },
+        {
+            "id": "https://openalex.org/C68709404",
+            "wikidata": "https://www.wikidata.org/wiki/Q1134475",
+            "display_name": "Flux (metallurgy)",
+            "level": 2,
+            "score": 0.563765704631805
+        },
+        {
+            "id": "https://openalex.org/C91586092",
+            "wikidata": "https://www.wikidata.org/wiki/Q757520",
+            "display_name": "Atmospheric sciences",
+            "level": 1,
+            "score": 0.506236732006073
+        },
+        {
+            "id": "https://openalex.org/C197248824",
+            "wikidata": "https://www.wikidata.org/wiki/Q184395",
+            "display_name": "Seawater",
+            "level": 2,
+            "score": 0.464795053005219
+        },
+        {
+            "id": "https://openalex.org/C153294291",
+            "wikidata": "https://www.wikidata.org/wiki/Q25261",
+            "display_name": "Meteorology",
+            "level": 1,
+            "score": 0.35810661315918
+        },
+        {
+            "id": "https://openalex.org/C127313418",
+            "wikidata": "https://www.wikidata.org/wiki/Q1069",
+            "display_name": "Geology",
+            "level": 0,
+            "score": 0.222544193267822
+        },
+        {
+            "id": "https://openalex.org/C121332964",
+            "wikidata": "https://www.wikidata.org/wiki/Q413",
+            "display_name": "Physics",
+            "level": 0,
+            "score": 0.183925628662109
+        },
+        {
+            "id": "https://openalex.org/C185592680",
+            "wikidata": "https://www.wikidata.org/wiki/Q2329",
+            "display_name": "Chemistry",
+            "level": 0,
+            "score": 0.17756462097168
+        },
+        {
+            "id": "https://openalex.org/C111368507",
+            "wikidata": "https://www.wikidata.org/wiki/Q43518",
+            "display_name": "Oceanography",
+            "level": 1,
+            "score": 0.142250061035156
+        },
+        {
+            "id": "https://openalex.org/C18903297",
+            "wikidata": "https://www.wikidata.org/wiki/Q7150",
+            "display_name": "Ecology",
+            "level": 1,
+            "score": 0
+        },
+        {
+            "id": "https://openalex.org/C86803240",
+            "wikidata": "https://www.wikidata.org/wiki/Q420",
+            "display_name": "Biology",
+            "level": 0,
+            "score": 0
+        },
+        {
+            "id": "https://openalex.org/C110872660",
+            "wikidata": "https://www.wikidata.org/wiki/Q37813",
+            "display_name": "Ecosystem",
+            "level": 2,
+            "score": 0
+        },
+        {
+            "id": "https://openalex.org/C178790620",
+            "wikidata": "https://www.wikidata.org/wiki/Q11351",
+            "display_name": "Organic chemistry",
+            "level": 1,
+            "score": 0
+        }
+    ],
+    "mesh": [],
+    "locations_count": 5,
+    "locations": [
+        {
+            "id": "doi:10.1038/s41598-021-92947-w",
+            "is_oa": true,
+            "landing_page_url": "https://doi.org/10.1038/s41598-021-92947-w",
+            "pdf_url": "https://www.nature.com/articles/s41598-021-92947-w.pdf",
+            "source": {
+                "id": "https://openalex.org/S196734849",
+                "display_name": "Scientific Reports",
+                "issn_l": "2045-2322",
+                "issn": [
+                    "2045-2322"
+                ],
+                "is_oa": true,
+                "is_in_doaj": true,
+                "is_core": true,
+                "host_organization": "https://openalex.org/P4310319908",
+                "host_organization_name": "Nature Portfolio",
+                "host_organization_lineage": [
+                    "https://openalex.org/P4310319908",
+                    "https://openalex.org/P4310319965"
+                ],
+                "host_organization_lineage_names": [
+                    "Nature Portfolio",
+                    "Springer Nature"
+                ],
+                "type": "journal"
+            },
+            "license": "cc-by",
+            "license_id": "https://openalex.org/licenses/cc-by",
+            "version": "publishedVersion",
+            "is_accepted": true,
+            "is_published": true,
+            "raw_source_name": "Scientific Reports",
+            "raw_type": "journal-article"
+        },
+        {
+            "id": "pmid:34193883",
+            "is_oa": false,
+            "landing_page_url": "https://pubmed.ncbi.nlm.nih.gov/34193883",
+            "pdf_url": null,
+            "source": {
+                "id": "https://openalex.org/S4306525036",
+                "display_name": "PubMed",
+                "issn_l": null,
+                "issn": null,
+                "is_oa": false,
+                "is_in_doaj": false,
+                "is_core": false,
+                "host_organization": "https://openalex.org/I1299303238",
+                "host_organization_name": "National Institutes of Health",
+                "host_organization_lineage": [
+                    "https://openalex.org/I1299303238"
+                ],
+                "host_organization_lineage_names": [],
+                "type": "repository"
+            },
+            "license": null,
+            "license_id": null,
+            "version": "publishedVersion",
+            "is_accepted": true,
+            "is_published": true,
+            "raw_source_name": "Scientific reports",
+            "raw_type": null
+        },
+        {
+            "id": "pmh:oai:plymsea.ac.uk:9271",
+            "is_oa": false,
+            "landing_page_url": null,
+            "pdf_url": null,
+            "source": {
+                "id": "https://openalex.org/S4306400517",
+                "display_name": "Plymouth Marine Science Electronic Archive (The Marine Biological Association (MBA), Plymouth Marine Laboratory (PML) and the Sir Alister Hardy Foundation for Ocean Science (SAHFOS).)",
+                "issn_l": null,
+                "issn": null,
+                "is_oa": false,
+                "is_in_doaj": false,
+                "is_core": false,
+                "host_organization": null,
+                "host_organization_name": null,
+                "host_organization_lineage": [],
+                "host_organization_lineage_names": [],
+                "type": "repository"
+            },
+            "license": null,
+            "license_id": null,
+            "version": "acceptedVersion",
+            "is_accepted": true,
+            "is_published": false,
+            "raw_source_name": "",
+            "raw_type": "Publication - Article"
+        },
+        {
+            "id": "pmh:oai:doaj.org/article:8876030efbf54167bae0d984071ff7bf",
+            "is_oa": true,
+            "landing_page_url": "https://doaj.org/article/8876030efbf54167bae0d984071ff7bf",
+            "pdf_url": null,
+            "source": {
+                "id": "https://openalex.org/S112646816",
+                "display_name": "SHILAP Revista de lepidopterología",
+                "issn_l": "0300-5267",
+                "issn": [
+                    "0300-5267",
+                    "2340-4078"
+                ],
+                "is_oa": true,
+                "is_in_doaj": true,
+                "is_core": false,
+                "host_organization": null,
+                "host_organization_name": null,
+                "host_organization_lineage": [],
+                "host_organization_lineage_names": [],
+                "type": "journal"
+            },
+            "license": "cc-by-sa",
+            "license_id": "https://openalex.org/licenses/cc-by-sa",
+            "version": "submittedVersion",
+            "is_accepted": false,
+            "is_published": false,
+            "raw_source_name": "Scientific Reports, Vol 11, Iss 1, Pp 1-9 (2021)",
+            "raw_type": "article"
+        },
+        {
+            "id": "pmh:oai:pubmedcentral.nih.gov:8245487",
+            "is_oa": true,
+            "landing_page_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/8245487",
+            "pdf_url": null,
+            "source": {
+                "id": "https://openalex.org/S2764455111",
+                "display_name": "PubMed Central",
+                "issn_l": null,
+                "issn": null,
+                "is_oa": false,
+                "is_in_doaj": false,
+                "is_core": false,
+                "host_organization": "https://openalex.org/I1299303238",
+                "host_organization_name": "National Institutes of Health",
+                "host_organization_lineage": [
+                    "https://openalex.org/I1299303238"
+                ],
+                "host_organization_lineage_names": [],
+                "type": "repository"
+            },
+            "license": "other-oa",
+            "license_id": "https://openalex.org/licenses/other-oa",
+            "version": "submittedVersion",
+            "is_accepted": false,
+            "is_published": false,
+            "raw_source_name": "Sci Rep",
+            "raw_type": "Text"
+        }
+    ],
+    "best_oa_location": {
+        "id": "doi:10.1038/s41598-021-92947-w",
+        "is_oa": true,
+        "landing_page_url": "https://doi.org/10.1038/s41598-021-92947-w",
+        "pdf_url": "https://www.nature.com/articles/s41598-021-92947-w.pdf",
+        "source": {
+            "id": "https://openalex.org/S196734849",
+            "display_name": "Scientific Reports",
+            "issn_l": "2045-2322",
+            "issn": [
+                "2045-2322"
+            ],
+            "is_oa": true,
+            "is_in_doaj": true,
+            "is_core": true,
+            "host_organization": "https://openalex.org/P4310319908",
+            "host_organization_name": "Nature Portfolio",
+            "host_organization_lineage": [
+                "https://openalex.org/P4310319908",
+                "https://openalex.org/P4310319965"
+            ],
+            "host_organization_lineage_names": [
+                "Nature Portfolio",
+                "Springer Nature"
+            ],
+            "type": "journal"
+        },
+        "license": "cc-by",
+        "license_id": "https://openalex.org/licenses/cc-by",
+        "version": "publishedVersion",
+        "is_accepted": true,
+        "is_published": true,
+        "raw_source_name": "Scientific Reports",
+        "raw_type": "journal-article"
+    },
+    "sustainable_development_goals": [
+        {
+            "display_name": "Life below water",
+            "id": "https://metadata.un.org/sdg/14",
+            "score": 0.860000014305115
+        }
+    ],
+    "awards": [
+        {
+            "id": "https://openalex.org/G2091100600",
+            "display_name": null,
+            "funder_award_id": "NE/R015953/1",
+            "funder_id": "https://openalex.org/F4320320022",
+            "funder_display_name": "Sight Research UK"
+        },
+        {
+            "id": "https://openalex.org/G2141841917",
+            "display_name": null,
+            "funder_award_id": "noc010012",
+            "funder_id": "https://openalex.org/F4320320022",
+            "funder_display_name": "Sight Research UK"
+        },
+        {
+            "id": "https://openalex.org/G316067346",
+            "display_name": null,
+            "funder_award_id": "NE/R015953/1",
+            "funder_id": "https://openalex.org/F4320334631",
+            "funder_display_name": "Natural Environment Research Council"
+        },
+        {
+            "id": "https://openalex.org/G5700176411",
+            "display_name": null,
+            "funder_award_id": "noc010012",
+            "funder_id": "https://openalex.org/F4320334631",
+            "funder_display_name": "Natural Environment Research Council"
+        },
+        {
+            "id": "https://openalex.org/G7453161680",
+            "display_name": null,
+            "funder_award_id": "NE/N018095/1",
+            "funder_id": "https://openalex.org/F4320334631",
+            "funder_display_name": "Natural Environment Research Council"
+        },
+        {
+            "id": "https://openalex.org/G768508099",
+            "display_name": null,
+            "funder_award_id": "NE/N018095/1",
+            "funder_id": "https://openalex.org/F4320320022",
+            "funder_display_name": "Sight Research UK"
+        },
+        {
+            "id": "https://openalex.org/G8097503976",
+            "display_name": null,
+            "funder_award_id": "NE/P021409/1",
+            "funder_id": "https://openalex.org/F4320320022",
+            "funder_display_name": "Sight Research UK"
+        },
+        {
+            "id": "https://openalex.org/G8835962792",
+            "display_name": null,
+            "funder_award_id": "NE/P021409/1",
+            "funder_id": "https://openalex.org/F4320334631",
+            "funder_display_name": "Natural Environment Research Council"
+        }
+    ],
+    "funders": [
+        {
+            "id": "https://openalex.org/F4320318240",
+            "display_name": "European Space Agency",
+            "ror": "https://ror.org/03wd9za21"
+        },
+        {
+            "id": "https://openalex.org/F4320320022",
+            "display_name": "Sight Research UK",
+            "ror": "https://ror.org/03z2py885"
+        },
+        {
+            "id": "https://openalex.org/F4320320298",
+            "display_name": "University of Leeds",
+            "ror": "https://ror.org/024mrxd33"
+        },
+        {
+            "id": "https://openalex.org/F4320325669",
+            "display_name": "Stockholms Universitet",
+            "ror": "https://ror.org/05f0yaq80"
+        },
+        {
+            "id": "https://openalex.org/F4320334631",
+            "display_name": "Natural Environment Research Council",
+            "ror": "https://ror.org/02b5d8509"
+        },
+        {
+            "id": "https://openalex.org/F4320338104",
+            "display_name": "British Antarctic Survey",
+            "ror": "https://ror.org/01rhff309"
+        }
+    ],
+    "has_content": {
+        "grobid_xml": true,
+        "pdf": true
+    },
+    "content_urls": {
+        "pdf": "https://content.openalex.org/works/W3174520255.pdf",
+        "grobid_xml": "https://content.openalex.org/works/W3174520255.grobid-xml"
+    },
+    "referenced_works_count": 61,
+    "referenced_works": [
+        "https://openalex.org/W22902036",
+        "https://openalex.org/W1501374473",
+        "https://openalex.org/W1513196349",
+        "https://openalex.org/W1586499143",
+        "https://openalex.org/W1592659122",
+        "https://openalex.org/W1600897084",
+        "https://openalex.org/W1608013130",
+        "https://openalex.org/W1678157725",
+        "https://openalex.org/W1910957211",
+        "https://openalex.org/W1966697545",
+        "https://openalex.org/W1974010481",
+        "https://openalex.org/W1977111618",
+        "https://openalex.org/W1993057408",
+        "https://openalex.org/W1995871939",
+        "https://openalex.org/W1996553818",
+        "https://openalex.org/W1999061728",
+        "https://openalex.org/W2002264985",
+        "https://openalex.org/W2013728179",
+        "https://openalex.org/W2040973679",
+        "https://openalex.org/W2050728582",
+        "https://openalex.org/W2063521079",
+        "https://openalex.org/W2067311894",
+        "https://openalex.org/W2068616375",
+        "https://openalex.org/W2070259784",
+        "https://openalex.org/W2091945915",
+        "https://openalex.org/W2094300388",
+        "https://openalex.org/W2102183854",
+        "https://openalex.org/W2106402319",
+        "https://openalex.org/W2111317694",
+        "https://openalex.org/W2113608820",
+        "https://openalex.org/W2115559296",
+        "https://openalex.org/W2116003930",
+        "https://openalex.org/W2128596473",
+        "https://openalex.org/W2129374697",
+        "https://openalex.org/W2133265582",
+        "https://openalex.org/W2142021706",
+        "https://openalex.org/W2146823765",
+        "https://openalex.org/W2149932227",
+        "https://openalex.org/W2153796351",
+        "https://openalex.org/W2157380520",
+        "https://openalex.org/W2161365499",
+        "https://openalex.org/W2164783694",
+        "https://openalex.org/W2286370142",
+        "https://openalex.org/W2341774608",
+        "https://openalex.org/W2466397999",
+        "https://openalex.org/W2469005806",
+        "https://openalex.org/W2514382052",
+        "https://openalex.org/W2519239523",
+        "https://openalex.org/W2587311926",
+        "https://openalex.org/W2598693779",
+        "https://openalex.org/W2754470213",
+        "https://openalex.org/W2759500017",
+        "https://openalex.org/W2766980223",
+        "https://openalex.org/W2804982781",
+        "https://openalex.org/W2889437541",
+        "https://openalex.org/W2915979159",
+        "https://openalex.org/W2971870974",
+        "https://openalex.org/W2979653715",
+        "https://openalex.org/W3006256397",
+        "https://openalex.org/W3129656624",
+        "https://openalex.org/W7014086457"
+    ],
+    "related_works": [
+        "https://openalex.org/W2001142214",
+        "https://openalex.org/W2639302552",
+        "https://openalex.org/W2113334618",
+        "https://openalex.org/W4404190449",
+        "https://openalex.org/W4283799071",
+        "https://openalex.org/W2117991499",
+        "https://openalex.org/W2033190556",
+        "https://openalex.org/W4251336608",
+        "https://openalex.org/W2108799804",
+        "https://openalex.org/W4246264729"
+    ],
+    "abstract_inverted_index": {
+        "Abstract": [
+            0
+        ],
+        "The": [
+            1,
+            31,
+            161
+        ],
+        "flux": [
+            2
+        ],
+        "of": [
+            3,
+            62,
+            94,
+            104,
+            138,
+            163,
+            185,
+            194
+        ],
+        "CO": [
+            4,
+            105,
+            215
+        ],
+        "2": [
+            5,
+            106,
+            216
+        ],
+        "between": [
+            6
+        ],
+        "the": [
+            7,
+            10,
+            16,
+            23,
+            39,
+            58,
+            74,
+            95,
+            119,
+            159,
+            192,
+            195,
+            212
+        ],
+        "atmosphere": [
+            8
+        ],
+        "and": [
+            9,
+            127,
+            174,
+            199
+        ],
+        "ocean": [
+            11,
+            40
+        ],
+        "is": [
+            12,
+            41
+        ],
+        "often": [
+            13
+        ],
+        "estimated": [
+            14
+        ],
+        "as": [
+            15
+        ],
+        "air–sea": [
+            17,
+            214
+        ],
+        "gas": [
+            18,
+            24,
+            96
+        ],
+        "concentration": [
+            19
+        ],
+        "difference": [
+            20
+        ],
+        "multiplied": [
+            21
+        ],
+        "by": [
+            22,
+            116,
+            156
+        ],
+        "transfer": [
+            25,
+            97
+        ],
+        "velocity": [
+            26
+        ],
+        "(": [
+            27
+        ],
+        "K": [
+            28,
+            36,
+            63,
+            71,
+            130,
+            144,
+            151,
+            164,
+            201
+        ],
+        "660": [
+            29,
+            37,
+            64,
+            72,
+            131,
+            145,
+            152,
+            165,
+            202
+        ],
+        ").": [
+            30
+        ],
+        "first": [
+            32
+        ],
+        "order": [
+            33
+        ],
+        "driver": [
+            34
+        ],
+        "for": [
+            35
+        ],
+        "over": [
+            38
+        ],
+        "wind": [
+            42,
+            59,
+            136,
+            172,
+            178
+        ],
+        "through": [
+            43
+        ],
+        "its": [
+            44
+        ],
+        "influence": [
+            45
+        ],
+        "on": [
+            46,
+            101
+        ],
+        "near": [
+            47
+        ],
+        "surface": [
+            48,
+            188
+        ],
+        "hydrodynamics.": [
+            49
+        ],
+        "However,": [
+            50
+        ],
+        "field": [
+            51
+        ],
+        "observations": [
+            52
+        ],
+        "have": [
+            53
+        ],
+        "shown": [
+            54
+        ],
+        "substantial": [
+            55
+        ],
+        "variability": [
+            56,
+            196
+        ],
+        "in": [
+            57,
+            123,
+            158,
+            182,
+            197,
+            200,
+            209,
+            211
+        ],
+        "speed": [
+            60,
+            137
+        ],
+        "dependencies": [
+            61
+        ],
+        ".": [
+            65,
+            132,
+            203
+        ],
+        "In": [
+            66,
+            87
+        ],
+        "this": [
+            67
+        ],
+        "study": [
+            68
+        ],
+        "we": [
+            69,
+            89
+        ],
+        "measured": [
+            70
+        ],
+        "with": [
+            73,
+            147,
+            153
+        ],
+        "eddy": [
+            75
+        ],
+        "covariance": [
+            76
+        ],
+        "technique": [
+            77
+        ],
+        "during": [
+            78,
+            118
+        ],
+        "a": [
+            79,
+            91,
+            108,
+            134
+        ],
+        "~": [
+            80
+        ],
+        "11,000": [
+            81
+        ],
+        "km": [
+            82
+        ],
+        "long": [
+            83
+        ],
+        "Southern": [
+            84
+        ],
+        "Ocean": [
+            85
+        ],
+        "transect.": [
+            86
+        ],
+        "parallel,": [
+            88
+        ],
+        "made": [
+            90
+        ],
+        "novel": [
+            92
+        ],
+        "measurement": [
+            93
+        ],
+        "efficiency": [
+            98
+        ],
+        "(GTE)": [
+            99
+        ],
+        "based": [
+            100
+        ],
+        "partial": [
+            102
+        ],
+        "equilibration": [
+            103
+        ],
+        "using": [
+            107
+        ],
+        "Segmented": [
+            109
+        ],
+        "Flow": [
+            110
+        ],
+        "Coil": [
+            111
+        ],
+        "Equilibrator": [
+            112
+        ],
+        "system.": [
+            113
+        ],
+        "GTE": [
+            114,
+            149,
+            155,
+            167,
+            198
+        ],
+        "varied": [
+            115
+        ],
+        "20%": [
+            117
+        ],
+        "transect,": [
+            120
+        ],
+        "was": [
+            121,
+            168
+        ],
+        "distinct": [
+            122
+        ],
+        "different": [
+            124
+        ],
+        "water": [
+            125
+        ],
+        "masses,": [
+            126
+        ],
+        "related": [
+            128
+        ],
+        "to": [
+            129
+        ],
+        "At": [
+            133
+        ],
+        "moderate": [
+            135
+        ],
+        "7": [
+            139
+        ],
+        "m": [
+            140
+        ],
+        "s": [
+            141
+        ],
+        "−1": [
+            142
+        ],
+        ",": [
+            143
+        ],
+        "associated": [
+            146
+        ],
+        "high": [
+            148
+        ],
+        "exceeded": [
+            150
+        ],
+        "low": [
+            154
+        ],
+        "30%": [
+            157
+        ],
+        "mean.": [
+            160
+        ],
+        "sensitivity": [
+            162
+        ],
+        "towards": [
+            166
+        ],
+        "stronger": [
+            169
+        ],
+        "at": [
+            170,
+            176
+        ],
+        "lower": [
+            171
+        ],
+        "speeds": [
+            173
+        ],
+        "weaker": [
+            175
+        ],
+        "higher": [
+            177
+        ],
+        "speeds.": [
+            179
+        ],
+        "Naturally-occurring": [
+            180
+        ],
+        "organics": [
+            181
+        ],
+        "seawater,": [
+            183
+        ],
+        "some": [
+            184
+        ],
+        "which": [
+            186
+        ],
+        "are": [
+            187
+        ],
+        "active,": [
+            189
+        ],
+        "may": [
+            190
+        ],
+        "be": [
+            191
+        ],
+        "cause": [
+            193
+        ],
+        "Neglecting": [
+            204
+        ],
+        "these": [
+            205
+        ],
+        "variations": [
+            206
+        ],
+        "could": [
+            207
+        ],
+        "result": [
+            208
+        ],
+        "biases": [
+            210
+        ],
+        "computed": [
+            213
+        ],
+        "fluxes.": [
+            217
+        ]
+    },
+    "counts_by_year": [
+        {
+            "year": 2024,
+            "cited_by_count": 8
+        },
+        {
+            "year": 2023,
+            "cited_by_count": 6
+        },
+        {
+            "year": 2022,
+            "cited_by_count": 12
+        },
+        {
+            "year": 2021,
+            "cited_by_count": 2
+        }
+    ],
+    "updated_date": "2026-02-13T15:27:49.765798",
+    "created_date": "2021-07-05T00:00:00"
+}

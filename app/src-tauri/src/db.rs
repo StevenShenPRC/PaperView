@@ -23,6 +23,7 @@ pub struct Paper {
     pub title_cn: Option<String>,
     pub abstract_cn: Option<String>,
     pub local_path: Option<String>,
+    pub ris_content: Option<String>, // Added for original RIS storage
     pub pdfs: Vec<PaperPdf>,
     #[serde(default)]
     pub groups: Vec<i64>,
@@ -127,6 +128,10 @@ pub fn init_db<P: AsRef<Path>>(path: P) -> Result<Connection> {
     if !columns.iter().any(|c| c == "local_path") {
         conn.execute("ALTER TABLE papers ADD COLUMN local_path TEXT", [])?;
         println!("[DB Migration] Added local_path column to papers table.");
+    }
+    if !columns.iter().any(|c| c == "ris_content") {
+        conn.execute("ALTER TABLE papers ADD COLUMN ris_content TEXT", [])?;
+        println!("[DB Migration] Added ris_content column to papers table.");
     }
 
     // Multi-PDF support table
@@ -343,11 +348,12 @@ pub fn insert_paper(
     abstract_text: &str,
     title_cn: Option<&str>,
     abstract_cn: Option<&str>,
+    ris_content: Option<&str>,
 ) -> Result<()> {
     conn.execute(
-        "INSERT INTO papers (website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        params![website, journal, volume, date, title, doi, abstract_text, title_cn, abstract_cn],
+        "INSERT INTO papers (website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, ris_content) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        params![website, journal, volume, date, title, doi, abstract_text, title_cn, abstract_cn, ris_content],
     )?;
     Ok(())
 }
@@ -388,9 +394,14 @@ pub fn get_papers_by_batch(
     date: &str,
 ) -> Result<Vec<Paper>> {
     let mut stmt = conn.prepare(
-        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path
+        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path, ris_content
          FROM papers 
-         WHERE journalName = ? AND issueVolume = ? AND issueDate = ?
+         WHERE 
+            (?2 = 'PaperView_Manually_Imported' AND issueVolume = 'PaperView_Manually_Imported')
+            OR
+            (?1 = '手动导入' AND journalName = '手动导入')
+            OR
+            (journalName = ?1 AND issueVolume = ?2 AND issueDate = ?3)
          ORDER BY id ASC"
     )?;
 
@@ -407,6 +418,7 @@ pub fn get_papers_by_batch(
             title_cn: row.get(8).ok(),
             abstract_cn: row.get(9).ok(),
             local_path: row.get(10).ok(),
+            ris_content: row.get(11).ok(),
             pdfs: vec![],
             groups: vec![],
         })
@@ -438,7 +450,7 @@ pub fn update_paper_metadata(
 
 pub fn get_paper_by_id(conn: &Connection, id: i64) -> Result<Paper> {
     let mut stmt = conn.prepare(
-        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path
+        "SELECT id, website, journalName, issueVolume, issueDate, title, doi, abstract, title_cn, abstract_cn, local_path, ris_content
          FROM papers WHERE id = ?"
     )?;
 
@@ -455,6 +467,7 @@ pub fn get_paper_by_id(conn: &Connection, id: i64) -> Result<Paper> {
             title_cn: row.get(8).ok(),
             abstract_cn: row.get(9).ok(),
             local_path: row.get(10).ok(),
+            ris_content: row.get(11).ok(),
             pdfs: vec![],
             groups: vec![],
         })
@@ -583,7 +596,7 @@ pub fn remove_paper_from_group(conn: &Connection, paper_id: i64, group_id: i64) 
 
 pub fn get_papers_by_group(conn: &Connection, group_id: i64) -> Result<Vec<Paper>> {
     let mut stmt = conn.prepare(
-        "SELECT p.id, p.website, p.journalName, p.issueVolume, p.issueDate, p.title, p.doi, p.abstract, p.title_cn, p.abstract_cn, p.local_path
+        "SELECT p.id, p.website, p.journalName, p.issueVolume, p.issueDate, p.title, p.doi, p.abstract, p.title_cn, p.abstract_cn, p.local_path, p.ris_content
          FROM papers p
          JOIN paper_group_map m ON p.id = m.paper_id
          WHERE m.group_id = ?
@@ -603,6 +616,7 @@ pub fn get_papers_by_group(conn: &Connection, group_id: i64) -> Result<Vec<Paper
             title_cn: row.get(8).ok(),
             abstract_cn: row.get(9).ok(),
             local_path: row.get(10).ok(),
+            ris_content: row.get(11).ok(),
             pdfs: vec![],
             groups: vec![],
         })

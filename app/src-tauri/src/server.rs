@@ -50,11 +50,12 @@ async fn serve_script() -> impl IntoResponse {
 struct SyncPayload {
     website: String,
     #[serde(rename = "journalName")]
-    journal_name: String,
+    journal_name: Option<String>,
     #[serde(rename = "issueVolume")]
-    issue_volume: String,
+    issue_volume: Option<String>,
     #[serde(rename = "issueDate")]
-    issue_date: String,
+    issue_date: Option<String>,
+    ris_content: Option<String>,
     articles: Vec<Article>,
 }
 
@@ -64,9 +65,9 @@ struct Article {
     doi: String,
     #[serde(rename = "abstract")]
     abstract_content: String,
-    #[serde(default)] // Allow missing field
+    #[serde(default)]
     title_cn: Option<String>,
-    #[serde(default)] // Allow missing field
+    #[serde(default)]
     abstract_cn: Option<String>,
 }
 
@@ -74,35 +75,57 @@ async fn sync_data(
     State(state): State<AppState>,
     Json(payload): Json<SyncPayload>,
 ) -> impl IntoResponse {
-    println!("Received sync data: {} articles from {}", payload.articles.len(), payload.journal_name);
+    let is_manual = payload.website == "Manual Import";
+    let journal = if is_manual { "手动导入".to_string() } else { payload.journal_name.as_deref().unwrap_or("").to_string() };
+    let volume = if is_manual { "".to_string() } else { payload.issue_volume.as_deref().unwrap_or("").to_string() };
+    let date = if is_manual { chrono::Local::now().format("%Y-%m-%d").to_string() } else { payload.issue_date.as_deref().unwrap_or("").to_string() };
+
+    println!("Received sync data: {} articles from {}", payload.articles.len(), journal);
     
     let db_path = state.db_path.clone();
     
-    // Process in a blocking task to avoid blocking async runtime with DB ops
     let payload_for_db = payload.clone();
     let result = tokio::task::spawn_blocking(move || {
         let conn = db::init_db(&db_path).map_err(|e| e.to_string())?;
         
-        for article in payload_for_db.articles {
+        if let Some(ris) = payload_for_db.ris_content {
+            // Priority: RIS content
             db::insert_paper(
                 &conn,
                 &payload_for_db.website,
-                &payload_for_db.journal_name,
-                &payload_for_db.issue_volume,
-                &payload_for_db.issue_date,
-                &article.title,
-                &article.doi,
-                &article.abstract_content,
-                article.title_cn.as_deref(),
-                article.abstract_cn.as_deref(),
+                &journal,
+                &volume,
+                &date,
+                "", // Title if not in RIS
+                "", // DOI if not in RIS
+                "", // Abstract if not in RIS
+                None,
+                None,
+                Some(&ris),
             ).map_err(|e| e.to_string())?;
+        } else {
+            // Fallback to individual articles
+            for article in payload_for_db.articles {
+                db::insert_paper(
+                    &conn,
+                    &payload_for_db.website,
+                    &journal,
+                    &volume,
+                    &date,
+                    &article.title,
+                    &article.doi,
+                    &article.abstract_content,
+                    article.title_cn.as_deref(),
+                    article.abstract_cn.as_deref(),
+                    None,
+                ).map_err(|e| e.to_string())?;
+            }
         }
         Ok::<_, String>(())
     }).await.unwrap();
 
     match result {
         Ok(_) => {
-            // Emit event to frontend
             if let Err(e) = state.app_handle.emit("data-updated", &payload) {
                 println!("Failed to emit update event: {}", e);
             }

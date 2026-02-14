@@ -42,15 +42,34 @@ pub async fn fetch_doi_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&
     Ok(json)
 }
 
-pub async fn fetch_semantic_scholar_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
+pub async fn fetch_doi_ris(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<String, String> {
     let client = network::create_client_with_config(proxy_mode, proxy_url)
         .map_err(|e| e.to_string())?;
     
-    // Semantic Scholar API
-    // Fields: title, abstract, authors, year, venue, etc.
-    let url = format!("https://api.semanticscholar.org/graph/v1/paper/DOI:{}?fields=title,abstract,authors,year,venue", doi);
+    let url = format!("https://doi.org/{}", doi);
     
-    println!("Fetching from Semantic Scholar: {}", url);
+    let resp = client.get(&url)
+        .header("Accept", "application/x-research-info-systems")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(format!("Failed to fetch RIS for DOI {}: status {}", doi, resp.status()));
+    }
+    
+    let ris = resp.text().await.map_err(|e| e.to_string())?;
+    Ok(ris)
+}
+
+pub async fn fetch_openalex_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
+    let client = network::create_client_with_config(proxy_mode, proxy_url)
+        .map_err(|e| e.to_string())?;
+    
+    // OpenAlex works API
+    let url = format!("https://api.openalex.org/works/https://doi.org/{}", doi);
+    
+    println!("Fetching from OpenAlex: {}", url);
     
     let resp = client.get(&url)
         .header("Accept", "application/json")
@@ -59,9 +78,35 @@ pub async fn fetch_semantic_scholar_metadata(doi: &str, proxy_mode: &str, proxy_
         .map_err(|e| e.to_string())?;
 
     if !resp.status().is_success() {
-        return Err(format!("Semantic Scholar failed for DOI {}: status {}", doi, resp.status()));
+        return Err(format!("OpenAlex failed for DOI {}: status {}", doi, resp.status()));
     }
     
-    let json: Value = resp.json().await.map_err(|e| e.to_string())?;
+    let mut json: Value = resp.json().await.map_err(|e| e.to_string())?;
+    
+    // Decode abstract_inverted_index if present
+    if let Some(index) = json.get("abstract_inverted_index").and_then(|v| v.as_object()) {
+        let mut words = Vec::new();
+        for (word, positions) in index {
+            if let Some(pos_arr) = positions.as_array() {
+                for pos in pos_arr {
+                    if let Some(p) = pos.as_u64() {
+                        words.push((p as usize, word.clone()));
+                    }
+                }
+            }
+        }
+        words.sort_by_key(|k| k.0);
+        let reconstructed: String = words.into_iter().map(|w| w.1).collect::<Vec<_>>().join(" ");
+        json["abstract"] = serde_json::Value::String(reconstructed);
+    }
+
+    // Extract Journal Name from primary_location.source.display_name
+    if let Some(source) = json.get("primary_location")
+        .and_then(|pl| pl.get("source")) {
+            if let Some(name) = source.get("display_name").and_then(|n| n.as_str()) {
+                json["journal_name"] = serde_json::Value::String(name.to_string());
+            }
+    }
+    
     Ok(json)
 }

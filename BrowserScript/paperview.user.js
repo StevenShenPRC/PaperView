@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PaperView 伴侣
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2-alpha.0
+// @version      0.1.1
 // @description  PaperView伴侣脚本，批量同步论文信息至桌面APP
 // @author       Steven Shen
 // @match        *://www.sciencedirect.com/*
@@ -55,18 +55,37 @@
                 return issueDateElement?.innerText.trim() || "Unknown Date";
             },
             getItemSelector: () => ".js-article-list-item",
-            parseArticle: (el) => ({
-                title: el.querySelector('.js-article-title')?.innerText.trim() || "",
-                doi: (el.querySelector('div[hidden]')?.innerText.trim() || "").replace('https://doi.org/', ''),
-                abstract: el.querySelector('.js-abstract-body-text p, .abstract-body p')?.innerText.trim() || ""
-            }),
-            clickAbstractButtons: () => {
-                const buttons = document.querySelectorAll('li.tab.js-abstract-heading button.tab-title');
-                buttons.forEach(button => {
-                    if (button.innerText.trim() === "Abstract" && button.getAttribute('aria-disabled') === 'false') {
-                        button.click();
-                    }
+            // Switch to RIS mode for reliability
+            useRIS: true,
+            fetchRIS: async (el) => {
+                const doi = el.querySelector('div[hidden]')?.innerText.trim() || "";
+                if (!doi) return null;
+                const doiClean = doi.replace('https://doi.org/', '');
+                // ScienceDirect export RIS URL (example pattern, might need adjustment)
+                const risUrl = `https://www.sciencedirect.com/sdfe/api/cite/${doiClean}?format=ris&type=ref`;
+                return new Promise((resolve) => {
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        url: risUrl,
+                        onload: (res) => resolve(res.status === 200 ? res.responseText : null),
+                        onerror: () => resolve(null)
+                    });
                 });
+            }
+        },
+        "Web of Science": {
+            domain: "webofknowledge.com",
+            getJournal: () => document.querySelector('.journal-title')?.innerText || "Web of Science Search",
+            getIssueVolume: () => "",
+            getIssueDate: () => "",
+            getItemSelector: () => ".search-results-item",
+            useRIS: true,
+            // WoS often requires export click or download interception
+            // Using download interception for WoS as primary strategy
+            interceptDownload: true,
+            fetchRIS: async (el) => {
+                // Individual fetch if possible, but WoS is complex
+                return null;
             }
         },
         "Springer": {
@@ -317,25 +336,38 @@
             adapter.clickAbstractButtons();
         }
 
+        logDiv.innerText = "正在解析页面...";
+
         // 等待一段时间以确保内容加载完成
         setTimeout(async () => {
             const items = document.querySelectorAll(adapter.getItemSelector());
+            const articles = [];
+            let risContent = "";
+
+            for (const el of items) {
+                if (adapter.useRIS && adapter.fetchRIS) {
+                    const ris = await adapter.fetchRIS(el);
+                    if (ris) {
+                        risContent += ris + "\n";
+                    } else if (adapter.parseArticle) {
+                        // Fallback to parseArticle if fetchRIS fails
+                        articles.push(await adapter.parseArticle(el));
+                    }
+                } else if (adapter.parseArticle) {
+                    articles.push(await adapter.parseArticle(el));
+                }
+            }
 
             const payload = {
                 website: siteSelect.value,
                 journalName: adapter.getJournal(),
                 issueVolume: adapter.getIssueVolume(),
                 issueDate: adapter.getIssueDate(),
-                articles: []
+                ris_content: risContent || null,
+                articles: articles
             };
 
-            // 按顺序解析文章，确保速率限制生效
-            for (const el of items) {
-                const article = await adapter.parseArticle(el); // 逐个解析文章
-                payload.articles.push(article);
-            }
-
-            logDiv.innerText = `同步中 (${payload.articles.length} 条)...`;
+            logDiv.innerText = `同步中 (${articles.length || "RIS"} 条)...`;
 
             const url = getApiUrl('/sync');
             GM_xmlhttpRequest({
@@ -347,20 +379,28 @@
                     if (res.status === 200) {
                         logDiv.style.color = "#393";
                         logDiv.innerText = "✅ 同步成功！";
-                        console.log("[Springer] 同步成功！");
                     } else {
                         logDiv.style.color = "#c33";
                         logDiv.innerText = "❌ 同步失败: " + res.status;
-                        console.error(`[Springer] 同步失败，状态码: ${res.status}`);
                     }
                 },
                 onerror: () => {
                     logDiv.innerText = "❌ 推送失败，检查API";
-                    console.error("[Springer] 推送失败，检查 API。");
                 }
             });
 
-        }, 2000); // 等待 2 秒以确保 Abstract 内容加载完成
+        }, 2000);
+    };
+
+    // --- 下载拦截 (针对 WoS 等站点) ---
+    // 这是一个简单的下载拦截示例，实际可能需要更复杂的逻辑来识别 RIS 文件
+    const originalOpen = window.open;
+    window.open = function (url, name, specs) {
+        if (url && url.includes('export') && url.includes('format=ris')) {
+            console.log("Intercepted RIS download:", url);
+            // 可以在此处引导用户将文件上传或自动处理
+        }
+        return originalOpen.apply(this, arguments);
     };
 
 })();

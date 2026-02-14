@@ -5,7 +5,8 @@ import {
     FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Typography, TextField
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { ThemeMode } from '../App';
+import { useDialog } from '../context/DialogContext';
+import { ThemeMode } from '../context/ThemeContext';
 import { AppSettings } from '../types';
 import store from '../store';
 import NetworkSettings from './settings/NetworkSettings';
@@ -47,6 +48,7 @@ function CustomTabPanel(props: TabPanelProps) {
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, onModeChange }) => {
     const { t, i18n } = useTranslation();
+    const dialog = useDialog();
     const [tabValue, setTabValue] = useState(0);
     const [settings, setSettings] = useState<AppSettings>({
         proxy_mode: 'system',
@@ -101,13 +103,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             await store.save();
 
             if (portChanged) {
-                alert(t('app.restart_required_alert') || "Port changed. Please restart the application for changes to take effect.");
+                dialog.alert(t('app.restart_required_alert') || "Port changed. Please restart the application for changes to take effect.");
             }
 
             onClose();
         } catch (e) {
             console.error('Failed to save settings', e);
-            alert('Failed to save settings');
+            dialog.alert('Failed to save settings');
         }
     };
 

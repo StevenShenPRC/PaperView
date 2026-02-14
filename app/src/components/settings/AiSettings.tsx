@@ -14,6 +14,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
 import { AiProvider } from '../../types';
 import { invoke } from '@tauri-apps/api/core';
+import { useDialog } from '../../context/DialogContext';
 
 interface AiSettingsProps {
     providers: AiProvider[];
@@ -38,6 +39,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
     onUpdateActive
 }) => {
     const { t } = useTranslation();
+    const dialog = useDialog();
     const [openDialog, setOpenDialog] = useState(false);
     const [editingProvider, setEditingProvider] = useState<AiProvider | null>(null);
 
@@ -94,7 +96,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
             try {
                 parsedHeaders = JSON.parse(headers);
             } catch (e) {
-                alert(t('settings.invalid_json_headers'));
+                dialog.alert(t('settings.invalid_json_headers'));
                 return;
             }
         }
@@ -125,7 +127,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
         } else {
             // Add new
             if (providers.some(p => p.name === newProvider.name)) {
-                alert(t('settings.provider_exists'));
+                dialog.alert(t('settings.provider_exists'));
                 return;
             }
             onUpdateProviders([...providers, newProvider]);
@@ -133,8 +135,9 @@ const AiSettings: React.FC<AiSettingsProps> = ({
         handleCloseDialog();
     };
 
-    const handleDelete = (providerName: string) => {
-        if (confirm(t('settings.confirm_delete_provider'))) {
+    const handleDelete = async (providerName: string) => {
+        const confirmed = await dialog.confirm(t('settings.confirm_delete_provider'));
+        if (confirmed) {
             const newProviders = providers.filter(p => p.name !== providerName);
             onUpdateProviders(newProviders);
             if (activeProvider === providerName) {
@@ -155,7 +158,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
 
     const handleFetchModels = async () => {
         if (!baseUrl) {
-            alert(t('settings.fill_basepath_apikey_first'));
+            dialog.alert(t('settings.fill_basepath_apikey_first'));
             return;
         }
 
@@ -179,11 +182,11 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                     setDefaultModel(fetchedModels[0]);
                 }
             } else {
-                alert(t('settings.no_models_found'));
+                dialog.alert(t('settings.no_models_found'));
             }
         } catch (error) {
             console.error(error);
-            alert(`${t('settings.fetch_failed')}: ${error}`);
+            dialog.alert(`${t('settings.fetch_failed')}: ${error}`);
         } finally {
             setIsFetchingModels(false);
         }

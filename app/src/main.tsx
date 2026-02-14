@@ -4,8 +4,15 @@ import App from "./App";
 import "./App.css";
 import "./i18n";
 
+import { DialogProvider } from "./context/DialogContext";
+import { AppThemeProvider } from "./context/ThemeContext";
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <AppThemeProvider>
+      <DialogProvider>
+        <App />
+      </DialogProvider>
+    </AppThemeProvider>
   </React.StrictMode>,
 );

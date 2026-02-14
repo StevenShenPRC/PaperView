@@ -9,6 +9,7 @@ mod network;
 mod crawler;
 mod window_icon;
 mod storage;
+mod ris;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State, path::BaseDirectory};
@@ -151,109 +152,64 @@ async fn get_papers(app: AppHandle, _state: State<'_, AppState>, journal: String
 #[tauri::command]
 async fn update_metadata(app: AppHandle, _state: State<'_, AppState>, id: i64, doi: String) -> Result<db::Paper, String> {
     let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
-    // Get Proxy Config
     let (proxy_mode, proxy_url) = get_proxy_config(&app);
-    // ... rest of the function remains similar but uses db_path resolved above
 
-    // 1. Fetch metadata (Try CrossRef/DOI.org first)
     println!("Fetching metadata for DOI: {}", doi);
-    let metadata = doi::fetch_doi_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await.ok();
     
+    let ris_content = doi::fetch_doi_ris(&doi, &proxy_mode, proxy_url.as_deref()).await.ok();
     let mut title = String::new();
     let mut abstract_raw = String::new();
-    
-    // Check if CrossRef data is valid/complete
-    let mut valid_crossref = false;
-    if let Some(ref md) = metadata {
-        // Extract title
-        title = md["title"].as_str()
-            .map(|s| s.to_string())
-            .or_else(|| md["title"].as_array().and_then(|arr| arr.first()?.as_str().map(|s| s.to_string())))
-            .unwrap_or_else(|| "".to_string());
 
-        // Extract abstract
-        abstract_raw = md["abstract"].as_str().unwrap_or("").to_string();
-        
-        if !title.is_empty() {
-             // If abstract is empty or very short, we might consider it incomplete, 
-             // but sometimes papers just don't have abstracts. 
-             // However, user specifically asked to fallback if incomplete.
-             // Let's assume if abstract is missing/empty, we try fallback.
-             if !abstract_raw.is_empty() {
-                 valid_crossref = true;
-             }
+    if let Some(ref ris) = ris_content {
+        let papers = ris::parse_ris(ris);
+        if let Some(p) = papers.first() {
+            title = p.title.clone();
+            abstract_raw = p.abstract_text.clone();
         }
     }
-    
-    // Fallback to Semantic Scholar if needed
-    if !valid_crossref {
-        println!("CrossRef data incomplete or failed. Trying Semantic Scholar...");
-        match doi::fetch_semantic_scholar_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await {
-            Ok(ss_md) => {
-                println!("Semantic Scholar data received.");
-                // Overwrite or fill in
-                let ss_title = ss_md["title"].as_str().unwrap_or("").to_string();
-                let ss_abstract = ss_md["abstract"].as_str().unwrap_or("").to_string();
-                
-                if !ss_title.is_empty() && (title.is_empty() || title == "Unknown Title") {
-                    title = ss_title;
-                }
-                
-                // If CrossRef abstract was empty, use Semantic Scholar's
-                if abstract_raw.is_empty() && !ss_abstract.is_empty() {
-                    abstract_raw = ss_abstract;
-                } else if !ss_abstract.is_empty() && abstract_raw.len() < 50 && ss_abstract.len() > 50 {
-                     // Heuristic: if CrossRef abstract is surprisingly short (maybe just "Abstract") and SS is longer
-                     abstract_raw = ss_abstract;
-                }
+
+    if title.is_empty() || abstract_raw.len() < 100 {
+        match doi::fetch_openalex_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await {
+            Ok(oa_md) => {
+                let oa_title = oa_md["display_name"].as_str().unwrap_or("").to_string();
+                let oa_abstract = oa_md["abstract"].as_str().unwrap_or("").to_string();
+                if !oa_title.is_empty() && (title.is_empty() || title == "Unknown Title") { title = oa_title; }
+                if abstract_raw.len() < 100 && !oa_abstract.is_empty() { abstract_raw = oa_abstract; }
             },
-            Err(e) => {
-                println!("Semantic Scholar failed: {}", e);
-            }
-        }
-        
-        // 3. Crawler Fallback (Direct Publisher Crawl)
-        // If we still don't have a good abstract, try crawling
-        if abstract_raw.is_empty() {
-            println!("Trying direct crawler fallback...");
-            match crawler::fetch_metadata_by_crawling(&doi, &proxy_mode, proxy_url.as_deref()).await {
-                Ok(crawl_md) => {
-                    println!("Crawler success.");
-                    let c_title = crawl_md["title"].as_str().unwrap_or("").to_string();
-                    let c_abstract = crawl_md["abstract"].as_str().unwrap_or("").to_string();
-                    
-                    if !c_title.is_empty() && (title.is_empty() || title == "Unknown Title") {
-                        title = c_title;
-                    }
-                    if !c_abstract.is_empty() {
-                        abstract_raw = c_abstract;
-                    }
-                },
-                Err(ce) => {
-                     println!("Crawler failed: {}", ce);
-                     // Propagate rate limit errors to frontend so UI can show warning
-                     if ce.contains("Publisher policy limit") || ce.contains("risk control") {
-                         return Err(ce);
-                     }
-                }
-            }
+            Err(e) => println!("OpenAlex failed: {}", e),
         }
     }
 
-    if title.is_empty() && abstract_raw.is_empty() {
-         return Err(format!("Failed to fetch metadata from all sources for DOI {}", doi));
+    if abstract_raw.len() < 50 {
+        if let Ok(crawl_md) = crawler::fetch_metadata_by_crawling(&doi, &proxy_mode, proxy_url.as_deref()).await {
+             let c_abstract = crawl_md["abstract"].as_str().unwrap_or("").to_string();
+             if !c_abstract.is_empty() { abstract_raw = c_abstract; }
+        }
     }
 
-    // Since we just added regex crate, let's use it.
-    // Note: We need to import regex at top or use full path.
-    // Let's use simple logic here to avoid import issues if not caught by analyzer yet, 
-    // but better to add `use regex::Regex;` at top of file.
-    // For now, I will use a robust replacement chain that covers common JATS tags found in Springer papers.
+    let abstract_text = clean_abstract(&abstract_raw);
+    let db_path_clone = db_path.clone();
+    let d_title = title.clone();
+    let d_abstract = abstract_text.clone();
+    let d_ris = ris_content.clone();
     
-    let abstract_text = abstract_raw
-        .replace("<jats:p>", "")
+    let updated_paper = tokio::task::spawn_blocking(move || {
+        let conn = db::init_db(db_path_clone.to_str().unwrap()).map_err(|e| e.to_string())?;
+        conn.execute(
+            "UPDATE papers SET title = ?, abstract = ?, ris_content = ? WHERE id = ?",
+            rusqlite::params![d_title, d_abstract, d_ris, id],
+        ).map_err(|e| e.to_string())?;
+        db::get_paper_by_id(&conn, id).map_err(|e| e.to_string())
+    }).await.unwrap()?;
+
+    app.emit("paper-updated", &updated_paper).ok();
+    Ok(updated_paper)
+}
+
+fn clean_abstract(raw: &str) -> String {
+    raw.replace("<jats:p>", "")
         .replace("</jats:p>", "\n")
-        .replace("<jats:title>", "") // Often "Abstract" or section title
+        .replace("<jats:title>", "")
         .replace("</jats:title>", ". ")
         .replace("<jats:bold>", "")
         .replace("</jats:bold>", "")
@@ -270,49 +226,194 @@ async fn update_metadata(app: AppHandle, _state: State<'_, AppState>, id: i64, d
         .replace("<b>", "")
         .replace("</b>", "")
         .trim()
-        .to_string(); 
-        
-    // If we wanted to use Regex:
-    // let re = regex::Regex::new(r"<[^>]*>").unwrap();
-    // let abstract_text = re.replace_all(&abstract_raw, "").trim().to_string();
-    
-    // Using the manual chain above is safer without ensuring `use` is at top of file right now in this ReplaceChunk.
-    // But I will do a separate ReplaceChunk to add the import if I decide to use Regex.
-    // Actually, let's stick to the manual chain for now as it maps specific tags to formatting (like sub/sup) better than just stripping.
-    // Stripping <jats:sub>1</jats:sub> to "1" loses meaning (CO2 vs CO2). "_{1}" is better LaTeX-ish style.
+        .to_string()
+}
 
-    // 3. Update DB
-    let db_path_read = db_path.clone();
-    let existing_paper = tokio::task::spawn_blocking(move || {
-        let conn = db::init_db(db_path_read.to_str().unwrap()).map_err(|e| e.to_string())?;
-        db::get_paper_by_id(&conn, id).map_err(|e| e.to_string())
-    }).await.unwrap()?;
+fn clean_doi(doi: &str) -> String {
+    let re = regex::Regex::new(r"(?i)^(https?://doi\.org/|doi:|DOI:)").unwrap();
+    re.replace(doi.trim(), "").to_string()
+}
 
-    let final_title = if !title.is_empty() { title } else { existing_paper.title };
-    let final_abstract = if !abstract_text.is_empty() { abstract_text } else { existing_paper.abstract_text };
-    
-    let db_path_write = db_path.clone();
-    let d_title = final_title.clone();
-    let d_abstract = final_abstract.clone();
-    
-    tokio::task::spawn_blocking(move || {
-        let conn = db::init_db(db_path_write.to_str().unwrap()).map_err(|e| e.to_string())?;
-        db::update_paper_metadata(&conn, id, &d_title, &d_abstract).map_err(|e| e.to_string())
-    }).await.unwrap()?;
-    
-    // 4. Return updated
-    let db_path_final = db_path.clone();
-    let updated_paper = tokio::task::spawn_blocking(move || {
-        let conn = db::init_db(db_path_final.to_str().unwrap()).map_err(|e| e.to_string())?;
-        db::get_paper_by_id(&conn, id).map_err(|e| e.to_string())
-    }).await.unwrap()?;
+#[tauri::command]
+async fn import_from_doi(app: AppHandle, dois: Vec<String>, group_id: Option<i64>) -> Result<Vec<db::Paper>, String> {
+    let mut results = Vec::new();
+    let mut errors = Vec::new();
 
-    // Emit event
-    if let Err(e) = app.emit("paper-updated", &updated_paper) {
-        println!("Failed to emit paper-updated event: {}", e);
+    for doi_raw in dois {
+        let doi = clean_doi(&doi_raw);
+        if doi.is_empty() { continue; }
+
+        match import_single_doi(&app, doi, group_id).await {
+            Ok(paper) => results.push(paper),
+            Err(e) => errors.push(format!("DOI {}: {}", doi_raw, e)),
+        }
     }
 
-    Ok(updated_paper)
+    if results.is_empty() && !errors.is_empty() {
+        return Err(errors.join("; "));
+    }
+    
+    // Emit update once
+    app.emit("data-updated", &{}).ok();
+    Ok(results)
+}
+
+// Helper function extracted from original import_from_doi
+async fn import_single_doi(app: &AppHandle, doi: String, group_id: Option<i64>) -> Result<db::Paper, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let (proxy_mode, proxy_url) = get_proxy_config(app);
+    
+    // 1. Fetch RIS
+    let ris_content = doi::fetch_doi_ris(&doi, &proxy_mode, proxy_url.as_deref()).await.ok();
+    
+    let mut title = "Unknown Title".to_string();
+    let mut abstract_text = "".to_string();
+    let mut journal = "Unknown Journal".to_string();
+
+    if let Some(ref ris) = ris_content {
+        let papers = ris::parse_ris(ris);
+        if let Some(p) = papers.first() {
+            title = p.title.clone();
+            abstract_text = p.abstract_text.clone();
+            if !p.journal_name.is_empty() {
+                journal = p.journal_name.clone();
+            }
+        }
+    }
+
+    // 2. OpenAlex Enrichment
+    // Always try OpenAlex if abstract is short OR journal is unknown
+    if abstract_text.len() < 100 || journal == "Unknown Journal" {
+        if let Ok(oa_md) = doi::fetch_openalex_metadata(&doi, &proxy_mode, proxy_url.as_deref()).await {
+            if title == "Unknown Title" || title.is_empty() { 
+                title = oa_md["display_name"].as_str().unwrap_or("Unknown Title").to_string(); 
+            }
+            // Prefer OpenAlex abstract if current is short
+            if abstract_text.len() < 100 { 
+                abstract_text = oa_md["abstract"].as_str().unwrap_or(&abstract_text).to_string(); 
+            }
+            // Prefer OpenAlex journal if current is unknown
+            if journal == "Unknown Journal" || journal.is_empty() {
+                if let Some(j) = oa_md["journal_name"].as_str() {
+                    journal = j.to_string();
+                }
+            }
+        }
+    }
+
+    // 3. Save to DB
+    let db_path_clone = db_path.clone();
+    // Use import date as issueDate
+    let current_date = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let d_ris = ris_content.clone(); 
+    
+    let res = tokio::task::spawn_blocking(move || {
+        let conn = db::init_db(db_path_clone.to_str().unwrap()).map_err(|e| e.to_string())?;
+        db::insert_paper(
+            &conn, "DOI Import", &journal, "PaperView_Manually_Imported", &current_date, &title, &doi, &abstract_text, None, None, d_ris.as_deref()
+        ).map_err(|e| e.to_string())?;
+        
+        let id = conn.last_insert_rowid();
+        if let Some(gid) = group_id {
+            db::add_paper_to_group(&conn, id, gid).map_err(|e| e.to_string())?;
+        }
+        db::get_paper_by_id(&conn, id).map_err(|e| e.to_string())
+    }).await.unwrap()?;
+
+    Ok(res)
+}
+
+#[tauri::command]
+async fn import_ris(app: AppHandle, ris_content: String, group_id: Option<i64>) -> Result<Vec<db::Paper>, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    
+    let papers = ris::parse_ris(&ris_content);
+    if papers.is_empty() {
+        return Err("No valid RIS content found".to_string());
+    }
+    
+    let mut results = Vec::new();
+    let current_date = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let proxy_url_deref = proxy_url.clone();
+
+    for p in papers {
+        let mut title = p.title.clone();
+        let doi = clean_doi(&p.doi);
+        let mut abstract_text = p.abstract_text.clone();
+        let mut journal = if p.journal_name.is_empty() { "Unknown Journal".to_string() } else { p.journal_name.clone() };
+
+        // Enrichment
+        if !doi.is_empty() && (abstract_text.len() < 100 || journal == "Unknown Journal") {
+             if let Ok(oa_md) = doi::fetch_openalex_metadata(&doi, &proxy_mode, proxy_url_deref.as_deref()).await {
+                 if title.is_empty() || title == "Unknown Title" {
+                     if let Some(t) = oa_md["display_name"].as_str() { title = t.to_string(); }
+                 }
+                 if abstract_text.len() < 100 {
+                     if let Some(a) = oa_md["abstract"].as_str() { abstract_text = a.to_string(); }
+                 }
+                 if journal == "Unknown Journal" {
+                     if let Some(j) = oa_md["journal_name"].as_str() { journal = j.to_string(); }
+                 }
+             }
+        }
+        
+        // Use specific RIS content for this paper
+        let d_ris_content = p.ris_content.clone().unwrap_or_default();
+        
+        let db_path_inner = db_path.clone();
+        let current_date_inner = current_date.clone();
+        let title_clone = title.clone();
+        let doi_clone = doi.clone();
+        let abstract_clone = abstract_text.clone();
+        let journal_clone = journal.clone();
+        let ris_content_clone = d_ris_content.clone();
+
+        let res = tokio::task::spawn_blocking(move || {
+            let conn = db::init_db(db_path_inner.to_str().unwrap()).map_err(|e| e.to_string())?;
+            db::insert_paper(
+                &conn, "RIS Import", &journal_clone, "PaperView_Manually_Imported", &current_date_inner, &title_clone, &doi_clone, &abstract_clone, None, None, Some(&ris_content_clone)
+            ).map_err(|e| e.to_string())?;
+            
+            let id = conn.last_insert_rowid();
+            if let Some(gid) = group_id {
+                db::add_paper_to_group(&conn, id, gid).map_err(|e| e.to_string())?;
+            }
+            db::get_paper_by_id(&conn, id).map_err(|e| e.to_string())
+        }).await.unwrap();
+
+        match res {
+            Ok(paper) => results.push(paper),
+            Err(e) => println!("Error inserting RIS paper: {}", e), 
+        }
+    }
+
+    app.emit("data-updated", &{}).ok();
+    Ok::<Vec<db::Paper>, String>(results)
+}
+
+#[tauri::command]
+async fn export_references(paper_ids: Vec<i64>, format: String, app: AppHandle) -> Result<String, String> {
+    let db_path = app.path().resolve("papers.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
+    let conn = db::init_db(db_path.to_str().unwrap()).map_err(|e| e.to_string())?;
+    
+    let mut output = String::new();
+    for id in paper_ids {
+        if let Ok(paper) = db::get_paper_by_id(&conn, id) {
+            match format.as_str() {
+                "ris" => {
+                    output.push_str(&ris::to_ris(&paper));
+                    output.push('\n');
+                },
+                "bibtex" => {
+                    output.push_str(&ris::to_bibtex(&paper));
+                    output.push('\n');
+                },
+                _ => return Err("Unsupported format".to_string()),
+            }
+        }
+    }
+    Ok(output)
 }
 
 #[tauri::command]
@@ -858,6 +959,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(AppState { 
             vec_extension_path: Some(vec_extension_resource_path.to_string()) 
         })
@@ -923,9 +1025,13 @@ fn main() {
             delete_chat_session,
             get_chat_messages,
             create_chat_message,
-            search_history
+            search_history,
+
+            // New commands
+            import_from_doi,
+            import_ris,
+            export_references,
         ])
         .run(context)
         .expect("error while running tauri application");
 }
-

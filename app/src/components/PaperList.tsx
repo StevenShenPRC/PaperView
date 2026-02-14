@@ -3,8 +3,10 @@ import {
     Card, CardContent, Typography, CardActions, Button,
     Box, Chip, Link, Tooltip, IconButton, Menu,
     MenuItem, ListItemIcon, ListItemText, Divider,
-    Checkbox, AppBar, Toolbar, Fade
+    Checkbox, AppBar, Toolbar, Fade,
+    Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Paper, PaperPdf, Group, PendingContext, ContextItem } from '../types';
 import { Batch } from '../types';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -15,7 +17,6 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import Badge from '@mui/material/Badge';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -23,6 +24,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import FolderOffIcon from '@mui/icons-material/FolderOff';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
+import { useDialog } from '../context/DialogContext';
 import { Virtuoso } from 'react-virtuoso';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -180,6 +182,7 @@ const PaperList: React.FC<PaperListProps> = ({
     groups, selectedGroupId, onAddToGroup, onRemoveFromGroup, onContextSelect
 }) => {
     const { t } = useTranslation();
+    const dialog = useDialog();
 
     const [updatingIds, setUpdatingIds] = React.useState<Set<number>>(new Set());
     const [attachingIds, setAttachingIds] = React.useState<Set<number>>(new Set());
@@ -279,6 +282,32 @@ const PaperList: React.FC<PaperListProps> = ({
         setSelectedIds(new Set());
     };
 
+    const [exportMenuAnchor, setExportMenuAnchor] = React.useState<null | HTMLElement>(null);
+
+    const handleExportReferences = async (format: 'ris' | 'bibtex') => {
+        setExportMenuAnchor(null);
+        try {
+            const paperIds = Array.from(selectedIds);
+            const content: string = await invoke('export_references', { paperIds, format });
+
+            // Create a blob and download it
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `export.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setSelectedIds(new Set());
+        } catch (e) {
+            console.error("Export failed:", e);
+            dialog.alert("Export failed: " + e);
+        }
+    };
+
     const handleBatchUpdate = async () => {
         const selectedPapers = papers.filter(p => selectedIds.has(p.id));
         for (const paper of selectedPapers) {
@@ -305,7 +334,7 @@ const PaperList: React.FC<PaperListProps> = ({
 
         } catch (error) {
             console.error('Failed to attach PDF:', error);
-            alert('Failed to attach PDF: ' + error);
+            dialog.alert('Failed to attach PDF: ' + error);
         } finally {
             setAttachingIds(prev => {
                 const newSet = new Set(prev);
@@ -324,7 +353,7 @@ const PaperList: React.FC<PaperListProps> = ({
             });
         } catch (error) {
             console.error('Failed to delete PDF:', error);
-            alert('Failed to delete PDF: ' + error);
+            dialog.alert('Failed to delete PDF: ' + error);
         }
         setPdfMenuAnchor(null);
         setPdfMenuPaper(null);
@@ -382,6 +411,175 @@ const PaperList: React.FC<PaperListProps> = ({
         setContextMenuPos(null);
     };
 
+    const renderPaperCard = (paper: Paper) => {
+        const isSelected = selectedIds.has(paper.id);
+        const hasPdfs = paper.pdfs && paper.pdfs.length > 0;
+        const abstractText = paper.abstract || t('app.no_abstract') || "No abstract available";
+        const abstractCn = paper.abstract_cn;
+
+        return (
+            <Box sx={{ mb: 2 }}>
+                <Card
+                    elevation={isSelected ? 4 : 1}
+                    sx={{
+                        border: isSelected ? 2 : 1,
+                        borderColor: isSelected ? 'primary.main' : 'divider',
+                        transition: 'box-shadow 0.2s, border-color 0.2s',
+                        '&:hover': {
+                            boxShadow: 3,
+                            borderColor: isSelected ? 'primary.main' : 'primary.light'
+                        },
+                        position: 'relative'
+                    }}
+                >
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            zIndex: 1
+                        }}
+                    >
+                        <Checkbox
+                            size="small"
+                            checked={isSelected}
+                            onChange={(e) => handleSelectPaper(paper.id, (e.nativeEvent as MouseEvent).shiftKey)}
+                        />
+                    </Box>
+
+                    <CardContent onClick={(e) => {
+                        // Prevent click from toggling abstract if clicking checkbox or buttons
+                        if ((e.target as HTMLElement).closest('.MuiButtonBase-root')) return;
+                        handleSelectPaper(paper.id, (e.nativeEvent as MouseEvent).shiftKey);
+                    }} sx={{ cursor: 'pointer', pt: 3 }}>
+                        <Typography variant="h6" gutterBottom sx={{ pr: 4 }}>
+                            {paper.title}
+                        </Typography>
+
+                        {paper.title_cn && (
+                            <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
+                                {paper.title_cn}
+                            </Typography>
+                        )}
+
+                        <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <Chip size="small" label={paper.journalName || t('app.unknown_journal')} variant="outlined" />
+                            <Chip size="small" label={paper.issueVolume || t('app.unknown_volume')} variant="outlined" />
+                            <Chip size="small" label={paper.issueDate || t('app.unknown_date')} variant="outlined" />
+                            {paper.doi && (
+                                <Link
+                                    href={`https://doi.org/${paper.doi}`}
+                                    target="_blank"
+                                    variant="caption"
+                                    sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    DOI: {paper.doi}
+                                </Link>
+                            )}
+                        </Box>
+
+                        <CollapsibleText
+                            text={abstractText}
+                            readerActive={readerActive}
+                            expandLabel={t('app.expand_text')}
+                            collapseLabel={t('app.collapse_text')}
+                            onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.abstract') || "Abstract")}
+                        />
+
+                        {/* Chinese abstract - independently collapsible */}
+                        {abstractCn && (
+                            <CollapsibleText
+                                text={abstractCn}
+                                isHighlighted
+                                readerActive={readerActive}
+                                expandLabel={t('app.expand_text')}
+                                collapseLabel={t('app.collapse_text')}
+                                onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.translated_abstract') || "Translated Abstract")}
+                            />
+                        )}
+                    </CardContent>
+
+                    <CardActions sx={{ flexWrap: 'wrap', gap: 1 }}>
+                        {/* PDF actions */}
+                        {hasPdfs ? (
+                            <>
+                                <Button
+                                    startIcon={<MenuBookIcon />}
+                                    size="small"
+                                    variant="outlined"
+                                    color="primary"
+                                    onClick={() => onReadPdf?.(paper, paper.pdfs[0])}
+                                >
+                                    {t('app.read_pdf')}
+                                </Button>
+
+                                {/* Always show management menu button if has PDFs */}
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => handleOpenPdfMenu(e, paper)}
+                                >
+                                    <MoreVertIcon fontSize="small" />
+                                </IconButton>
+
+                                {/* Always allow attaching more */}
+                                <Button
+                                    startIcon={<AttachFileIcon />}
+                                    size="small"
+                                    onClick={() => handleAttachPdf(paper)}
+                                    disabled={attachingIds.has(paper.id)}
+                                >
+                                    {t('app.attach_pdf')}
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                startIcon={<AttachFileIcon />}
+                                size="small"
+                                onClick={() => handleAttachPdf(paper)}
+                                disabled={attachingIds.has(paper.id)}
+                            >
+                                {t('app.attach_pdf')}
+                            </Button>
+                        )}
+
+                        <Tooltip title={t('app.open_external')}>
+                            <IconButton
+                                size="small"
+                                onClick={() => window.open(`https://doi.org/${paper.doi}`, '_blank')}
+                            >
+                                <OpenInNewIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+
+                        <Button
+                            startIcon={<TranslateIcon />}
+                            size="small"
+                            onClick={() => onTranslate(paper)}
+                        >
+                            {t('app.translate')}
+                        </Button>
+
+                        <Button
+                            startIcon={<RefreshIcon sx={{
+                                animation: updatingIds.has(paper.id) ? 'spin 1s linear infinite' : 'none',
+                                '@keyframes spin': {
+                                    '0%': { transform: 'rotate(0deg)' },
+                                    '100%': { transform: 'rotate(360deg)' }
+                                }
+                            }} />}
+                            size="small"
+                            onClick={() => handleUpdateClick(paper)}
+                            disabled={updatingIds.has(paper.id)}
+                        >
+                            {t('app.update_metadata')}
+                        </Button>
+                    </CardActions>
+                </Card>
+            </Box>
+        );
+    };
+
     return (
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <Box sx={{ flexShrink: 0, mb: 2 }}>
@@ -436,6 +634,28 @@ const PaperList: React.FC<PaperListProps> = ({
                             {t('app.batch_update') || "Update"}
                         </Button>
 
+                        <Button
+                            color="inherit"
+                            startIcon={<ContentCopyIcon />}
+                            onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+                            sx={{ mr: 1 }}
+                        >
+                            {t('app.batch_export') || "Export"}
+                        </Button>
+
+                        <Menu
+                            anchorEl={exportMenuAnchor}
+                            open={Boolean(exportMenuAnchor)}
+                            onClose={() => setExportMenuAnchor(null)}
+                        >
+                            <MenuItem onClick={() => handleExportReferences('ris')}>
+                                {t('app.export_ris') || "Export RIS"}
+                            </MenuItem>
+                            <MenuItem onClick={() => handleExportReferences('bibtex')}>
+                                {t('app.export_bibtex') || "Export BibTeX"}
+                            </MenuItem>
+                        </Menu>
+
                         {selectedGroupId ? (
                             <Button color="error" startIcon={<FolderOffIcon />} onClick={handleRemoveFromGroupClick}>
                                 {t('app.remove_from_group') || "Remove"}
@@ -465,168 +685,60 @@ const PaperList: React.FC<PaperListProps> = ({
                 </Typography>
             </Box>
 
-            <Virtuoso
-                style={{ flex: 1 }}
-                data={papers}
-                itemContent={(_index: number, paper: Paper) => {
-                    const hasPdfs = paper.pdfs && paper.pdfs.length > 0;
-                    const abstractText = paper.abstract || t('app.no_abstract');
-                    const abstractCn = paper.abstract_cn;
-
-                    return (
-                        <Box sx={{ pb: 2 }}>
-                            <Card sx={{ mb: 0 }}>
-                                <CardContent>
-                                    {/* Title row with PDF indicator */}
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                                        <Checkbox
-                                            checked={selectedIds.has(paper.id)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onChange={(e) => {
-                                                // @ts-ignore
-                                                handleSelectPaper(paper.id, e.nativeEvent.shiftKey);
-                                            }}
-                                            sx={{ p: 0.5, mr: 1, mt: 0.5 }}
-                                        />
-                                        <Box sx={{ flex: 1 }}>
-                                            <Typography
-                                                variant="h6"
-                                                color="primary"
-                                                gutterBottom
-                                                onContextMenu={(e) => handleContextMenuOpen(e, paper.title, paper, t('app.title') || "Title")}
-                                            >
-                                                {paper.title}
-                                            </Typography>
-                                            {paper.title_cn && (
-                                                <Typography
-                                                    variant="subtitle1"
-                                                    color="textSecondary"
-                                                    gutterBottom
-                                                    onContextMenu={(e) => handleContextMenuOpen(e, paper.title_cn!, paper, t('app.translated_title') || "Translated Title")}
-                                                >
-                                                    {paper.title_cn}
-                                                </Typography>
-                                            )}
+            {batch?.issueVolume === "PaperView_Manually_Imported" ? (
+                <Box sx={{ flex: 1, overflowY: 'auto' }}>
+                    {Object.entries(
+                        papers.reduce((acc, paper) => {
+                            const date = paper.issueDate || "Unknown Date";
+                            if (!acc[date]) acc[date] = [];
+                            acc[date].push(paper);
+                            return acc;
+                        }, {} as Record<string, Paper[]>)
+                    ).sort((a, b) => b[0].localeCompare(a[0])) // Sort by date desc
+                        .map(([date, groupPapers]) => (
+                            <Accordion
+                                key={date}
+                                defaultExpanded
+                                disableGutters
+                                elevation={0}
+                                sx={{ '&:before': { display: 'none' }, borderBottom: 1, borderColor: 'divider' }}
+                                slotProps={{ transition: { timeout: 500 } }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    sx={{
+                                        bgcolor: 'action.hover',
+                                        minHeight: 48,
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 1
+                                    }}
+                                >
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                        {date} ({groupPapers.length})
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ p: 0 }}>
+                                    {groupPapers.map((paper) => (
+                                        <Box key={paper.id} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                                            {renderPaperCard(paper)}
                                         </Box>
-                                        {hasPdfs && (
-                                            <Tooltip title={`${paper.pdfs.length} PDF(s)`}>
-                                                <Badge badgeContent={paper.pdfs.length} color="primary" sx={{ ml: 2, mt: 1 }}>
-                                                    <AttachFileIcon color="action" fontSize="small" />
-                                                </Badge>
-                                            </Tooltip>
-                                        )}
-                                    </Box>
-
-                                    {/* Metadata chips */}
-                                    <Box sx={{ mb: 1 }}>
-                                        <Chip label={paper.journalName} size="small" sx={{ mr: 1 }} />
-                                        <Link href={`https://doi.org/${paper.doi}`} target="_blank" rel="noopener">
-                                            {paper.doi}
-                                        </Link>
-                                    </Box>
-
-                                    {/* English abstract - independently collapsible */}
-                                    <CollapsibleText
-                                        text={abstractText}
-                                        readerActive={readerActive}
-                                        expandLabel={t('app.expand_text')}
-                                        collapseLabel={t('app.collapse_text')}
-                                        onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.abstract') || "Abstract")}
-                                    />
-
-                                    {/* Chinese abstract - independently collapsible */}
-                                    {abstractCn && (
-                                        <CollapsibleText
-                                            text={abstractCn}
-                                            isHighlighted
-                                            readerActive={readerActive}
-                                            expandLabel={t('app.expand_text')}
-                                            collapseLabel={t('app.collapse_text')}
-                                            onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.translated_abstract') || "Translated Abstract")}
-                                        />
-                                    )}
-                                </CardContent>
-
-                                <CardActions sx={{ flexWrap: 'wrap', gap: 1 }}>
-                                    {/* PDF actions */}
-                                    {hasPdfs ? (
-                                        <>
-                                            <Button
-                                                startIcon={<MenuBookIcon />}
-                                                size="small"
-                                                variant="outlined"
-                                                color="primary"
-                                                onClick={() => onReadPdf?.(paper, paper.pdfs[0])}
-                                            >
-                                                {t('app.read_pdf')}
-                                            </Button>
-
-                                            {/* Always show management menu button if has PDFs */}
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => handleOpenPdfMenu(e, paper)}
-                                            >
-                                                <MoreVertIcon fontSize="small" />
-                                            </IconButton>
-
-                                            {/* Always allow attaching more */}
-                                            <Button
-                                                startIcon={<AttachFileIcon />}
-                                                size="small"
-                                                onClick={() => handleAttachPdf(paper)}
-                                                disabled={attachingIds.has(paper.id)}
-                                            >
-                                                {t('app.attach_pdf')}
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <Button
-                                            startIcon={<AttachFileIcon />}
-                                            size="small"
-                                            onClick={() => handleAttachPdf(paper)}
-                                            disabled={attachingIds.has(paper.id)}
-                                        >
-                                            {t('app.attach_pdf')}
-                                        </Button>
-                                    )}
-
-                                    <Tooltip title={t('app.open_external')}>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => window.open(`https://doi.org/${paper.doi}`, '_blank')}
-                                        >
-                                            <OpenInNewIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-
-                                    <Button
-                                        startIcon={<TranslateIcon />}
-                                        size="small"
-                                        onClick={() => onTranslate(paper)}
-                                    >
-                                        {t('app.translate')}
-                                    </Button>
-
-                                    <Button
-                                        startIcon={<RefreshIcon sx={{
-                                            animation: updatingIds.has(paper.id) ? 'spin 1s linear infinite' : 'none',
-                                            '@keyframes spin': {
-                                                '0%': { transform: 'rotate(0deg)' },
-                                                '100%': { transform: 'rotate(360deg)' }
-                                            }
-                                        }} />}
-                                        size="small"
-                                        onClick={() => handleUpdateClick(paper)}
-                                        disabled={updatingIds.has(paper.id)}
-                                    >
-                                        {t('app.update_metadata')}
-                                    </Button>
-                                </CardActions>
-                            </Card>
+                                    ))}
+                                </AccordionDetails>
+                            </Accordion>
+                        ))}
+                </Box>
+            ) : (
+                <Virtuoso
+                    style={{ flex: 1 }}
+                    data={papers}
+                    itemContent={(_index: number, paper: Paper) => (
+                        <Box sx={{ pb: 2 }}>
+                            {renderPaperCard(paper)}
                         </Box>
-                    );
-                }}
-            />
+                    )}
+                />
+            )}
 
             {/* PDF management menu (for papers with multiple PDFs) */}
             <Menu
