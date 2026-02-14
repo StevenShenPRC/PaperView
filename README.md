@@ -69,7 +69,7 @@ PaperView 导入文献需要与浏览器脚本协作：
 
 | 出版商 | 页面 |
 | :--- | :--- |
-| Springer Nature | `https://link.springer.com/journal/**/volumes-and-issues/***` |
+| Spr\*\*ger Nat\*re | `https://link.spr**ger.com/journal/**/volumes-and-issues/***` |
 |Els\*\*ier Sci\*\*ceDirect|`https://www.sci**cedirect.com/journal/***/vol/***/issues/`|
 |正在适配|………………|
 
