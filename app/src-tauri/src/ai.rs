@@ -71,9 +71,10 @@ pub async fn stream_chat(
     proxy_mode: String,
     proxy_url: Option<String>,
     additional_headers: Option<HashMap<String, String>>,
+    timeout_secs: Option<u64>,
 ) -> Result<(), String> {
     println!("stream_chat called with model: {}", model);
-    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref())
+    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref(), timeout_secs)
         .map_err(|e| format!("Network error: {}", e))?;
 
     let url = normalize_chat_url(&base_url);
@@ -147,11 +148,12 @@ pub async fn chat_simple(
     proxy_mode: String,
     proxy_url: Option<String>,
     additional_headers: Option<HashMap<String, String>>,
+    timeout_secs: Option<u64>,
 ) -> Result<String, String> {
     println!("chat_simple called with model: {}, proxy_mode: {}", model, proxy_mode);
     println!("Base URL: {}", base_url);
 
-    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref())
+    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref(), timeout_secs)
         .map_err(|e| e.to_string())?;
         
     let url = normalize_chat_url(&base_url);
@@ -211,8 +213,9 @@ pub async fn fetch_models(
     proxy_mode: String,
     proxy_url: Option<String>,
     additional_headers: Option<HashMap<String, String>>,
+    timeout_secs: Option<u64>,
 ) -> Result<Vec<String>, String> {
-    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref())
+    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref(), timeout_secs)
         .map_err(|e| e.to_string())?;
 
     let url = normalize_models_url(&base_url);
@@ -268,8 +271,9 @@ pub async fn get_embeddings(
     proxy_url: Option<String>,
     additional_headers: Option<HashMap<String, String>>,
     dimensions: Option<u32>,
+    timeout_secs: Option<u64>,
 ) -> Result<Vec<f32>, String> {
-    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref())
+    let client = network::create_client_with_config(&proxy_mode, proxy_url.as_deref(), timeout_secs)
         .map_err(|e| e.to_string())?;
 
     // Normalize URL for embeddings
@@ -326,6 +330,7 @@ pub async fn generate_chat_title(
     proxy_mode: String,
     proxy_url: Option<String>,
     additional_headers: Option<HashMap<String, String>>,
+    timeout_secs: Option<u64>,
 ) -> Result<String, String> {
     // Build a single user message containing conversation summary + instruction
     // This avoids system-role compatibility issues with Gemini/NewAPI
@@ -354,7 +359,7 @@ pub async fn generate_chat_title(
     ];
     
     println!("[generate_chat_title] Sending title request with model: {}", model);
-    let title = chat_simple(base_url, api_key, model, prompt_msgs, proxy_mode, proxy_url, additional_headers).await?;
+    let title = chat_simple(base_url, api_key, model, prompt_msgs, proxy_mode, proxy_url, additional_headers, timeout_secs).await?;
     
     println!("[generate_chat_title] Raw AI Title Response: '{}'", title);
     

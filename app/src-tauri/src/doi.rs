@@ -2,7 +2,7 @@ use serde_json::Value;
 use crate::network;
 
 pub async fn fetch_doi_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
-    let client = network::create_client_with_config(proxy_mode, proxy_url)
+    let client = network::create_client_with_config(proxy_mode, proxy_url, None)
         .map_err(|e| e.to_string())?;
     
     // Reverting to citation.doi.org as per user request to match browser script logic
@@ -43,7 +43,7 @@ pub async fn fetch_doi_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&
 }
 
 pub async fn fetch_doi_ris(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<String, String> {
-    let client = network::create_client_with_config(proxy_mode, proxy_url)
+    let client = network::create_client_with_config(proxy_mode, proxy_url, None)
         .map_err(|e| e.to_string())?;
     
     let url = format!("https://doi.org/{}", doi);
@@ -63,7 +63,7 @@ pub async fn fetch_doi_ris(doi: &str, proxy_mode: &str, proxy_url: Option<&str>)
 }
 
 pub async fn fetch_openalex_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
-    let client = network::create_client_with_config(proxy_mode, proxy_url)
+    let client = network::create_client_with_config(proxy_mode, proxy_url, None)
         .map_err(|e| e.to_string())?;
     
     // OpenAlex works API

@@ -12,15 +12,13 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningIcon from '@mui/icons-material/Warning';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
-import { AiProvider } from '../../types';
+import { AiProvider, AppSettings } from '../../types';
 import { invoke } from '@tauri-apps/api/core';
 import { useDialog } from '../../context/DialogContext';
 
 interface AiSettingsProps {
-    providers: AiProvider[];
-    activeProvider: string | null;
-    onUpdateProviders: (providers: AiProvider[]) => void;
-    onUpdateActive: (name: string | null) => void;
+    settings: AppSettings;
+    onChange: (settings: AppSettings) => void;
 }
 
 const PRESETS = [
@@ -33,11 +31,21 @@ const PRESETS = [
 ];
 
 const AiSettings: React.FC<AiSettingsProps> = ({
-    providers,
-    activeProvider,
-    onUpdateProviders,
-    onUpdateActive
+    settings,
+    onChange
 }) => {
+    const { providers, activeProvider } = {
+        providers: settings.ai_providers,
+        activeProvider: settings.active_ai_provider || null
+    };
+
+    const updateProviders = (newProviders: AiProvider[]) => {
+        onChange({ ...settings, ai_providers: newProviders });
+    };
+
+    const updateActive = (name: string | null) => {
+        onChange({ ...settings, active_ai_provider: name || undefined });
+    };
     const { t } = useTranslation();
     const dialog = useDialog();
     const [openDialog, setOpenDialog] = useState(false);
@@ -120,17 +128,17 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                 newProviders[index] = newProvider;
                 // If we renamed the active provider, update active
                 if (activeProvider === editingProvider.name && name !== editingProvider.name) {
-                    onUpdateActive(newProvider.name);
+                    updateActive(newProvider.name);
                 }
             }
-            onUpdateProviders(newProviders);
+            updateProviders(newProviders);
         } else {
             // Add new
             if (providers.some(p => p.name === newProvider.name)) {
                 dialog.alert(t('settings.provider_exists'));
                 return;
             }
-            onUpdateProviders([...providers, newProvider]);
+            updateProviders([...providers, newProvider]);
         }
         handleCloseDialog();
     };
@@ -139,9 +147,9 @@ const AiSettings: React.FC<AiSettingsProps> = ({
         const confirmed = await dialog.confirm(t('settings.confirm_delete_provider'));
         if (confirmed) {
             const newProviders = providers.filter(p => p.name !== providerName);
-            onUpdateProviders(newProviders);
+            updateProviders(newProviders);
             if (activeProvider === providerName) {
-                onUpdateActive(null);
+                updateActive(null);
             }
         }
     };
@@ -232,7 +240,7 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                             <Switch
                                 edge="end"
                                 checked={activeProvider === provider.name}
-                                onChange={() => onUpdateActive(provider.name)}
+                                onChange={() => updateActive(provider.name)}
                                 sx={{ mr: 2 }}
                             />
                             <IconButton edge="end" onClick={() => handleOpenDialog(provider)}>
@@ -245,6 +253,96 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                     </ListItem>
                 ))}
             </List>
+
+            <Box sx={{ mt: 4, mb: 2 }}>
+                <Typography variant="h6" gutterBottom>{t('settings.translation_settings') || "Translation Settings"}</Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <FormControl fullWidth size="small">
+                        <InputLabel>{t('settings.translation_target_lang') || "Target Language"}</InputLabel>
+                        <Select
+                            label={t('settings.translation_target_lang') || "Target Language"}
+                            value={settings.translation_target_lang || 'zh'}
+                            onChange={(e) => onChange({ ...settings, translation_target_lang: e.target.value })}
+                        >
+                            <MenuItem value="zh">简体中文 (Simplified Chinese)</MenuItem>
+                            <MenuItem value="en">English</MenuItem>
+                            <MenuItem value="ja">日本語 (Japanese)</MenuItem>
+                            <MenuItem value="ko">한국어 (Korean)</MenuItem>
+                            <MenuItem value="fr">Français (French)</MenuItem>
+                            <MenuItem value="de">Deutsch (German)</MenuItem>
+                            <MenuItem value="es">Español (Spanish)</MenuItem>
+                            <MenuItem value="ru">Русский (Russian)</MenuItem>
+                            <MenuItem value="it">Italiano (Italian)</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <TextField
+                        label={t('settings.translation_prompt') || "Custom Translation Prompt"}
+                        value={settings.translation_prompt || ''}
+                        onChange={(e) => onChange({ ...settings, translation_prompt: e.target.value })}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        placeholder={"Translate the following academic paper title and abstract into {{lang}}.\nReturn JSON format: { \"title_cn\": \"...\", \"abstract_cn\": \"...\" }."}
+                        helperText={t('settings.translation_prompt_hint') || "Use {{lang}} to dynamically inject the Target Language. Leave empty to use default. It MUST ask for JSON format with title_cn and abstract_cn keys."}
+                    />
+
+                    <TextField
+                        label={t('settings.translation_timeout') || "Translation Timeout (seconds)"}
+                        value={settings.translation_timeout || 120}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            onChange({ ...settings, translation_timeout: isNaN(val) ? 120 : val });
+                        }}
+                        type="number"
+                        fullWidth
+                        size="small"
+                        helperText={t('settings.translation_timeout_hint') || "Increase if you get 'operation timed out' errors on large abstracts."}
+                        sx={(theme) => ({
+                            '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                opacity: 1,
+                            }
+                        })}
+                    />
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                        <Box>
+                            <Typography variant="subtitle1">{t('settings.batch_translate_merge') || "Merge Batch Translation Requests"}</Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                {t('settings.batch_translate_merge_desc') || "Combines multiple papers into a single AI request to save API calls."}
+                            </Typography>
+                        </Box>
+                        <Switch
+                            checked={settings.batch_translate_merge || false}
+                            onChange={(e) => onChange({ ...settings, batch_translate_merge: e.target.checked })}
+                        />
+                    </Box>
+
+                    {settings.batch_translate_merge && (
+                        <TextField
+                            label={t('settings.batch_translate_size') || "Merge Batch Size"}
+                            value={settings.batch_translate_size || 5}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                onChange({ ...settings, batch_translate_size: isNaN(val) ? 5 : val });
+                            }}
+                            type="number"
+                            fullWidth
+                            size="small"
+                            helperText={t('settings.batch_translate_size_hint') || "How many papers to translate in one API call. Too many might exceed token limits or reduce quality."}
+                            sx={(theme) => ({
+                                '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                    filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                    opacity: 1,
+                                }
+                            })}
+                        />
+                    )}
+                </Box>
+            </Box>
 
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
                 <DialogTitle>{editingProvider ? t('settings.edit_provider') : t('settings.add_provider')}</DialogTitle>
@@ -352,6 +450,12 @@ const AiSettings: React.FC<AiSettingsProps> = ({
                             size="small"
                             type="number"
                             helperText={t('settings.dimensions_hint') || "Standard is 1536. Only needed if the model supports custom dimensions (v3 models)."}
+                            sx={(theme) => ({
+                                '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                    filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                    opacity: 1,
+                                }
+                            })}
                         />
 
                         <Accordion elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>

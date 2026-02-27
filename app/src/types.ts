@@ -14,6 +14,7 @@ export interface Paper {
     local_path?: string;
     pdfs: PaperPdf[];
     groups?: number[];
+    tags?: string[];
 }
 
 export interface Group {
@@ -58,6 +59,11 @@ export interface AppSettings {
     active_ai_provider?: string;
     server_port?: number;
     theme_mode: 'light' | 'dark' | 'system';
+    translation_target_lang?: string;
+    translation_prompt?: string;
+    translation_timeout?: number;
+    batch_translate_merge?: boolean;
+    batch_translate_size?: number;
 }
 
 export interface ChatMessage {
@@ -101,4 +107,9 @@ export interface ContextItem {
 export interface PendingContext {
     items: ContextItem[];
     mode: 'new' | 'append';
+}
+
+export interface SnackbarMessage {
+    message: string;
+    type?: 'info' | 'success' | 'warning' | 'error';
 }

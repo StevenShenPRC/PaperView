@@ -55,7 +55,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
         proxy_url: '',
         ai_providers: [],
         active_ai_provider: '',
-        theme_mode: 'system'
+        theme_mode: 'system',
+        translation_target_lang: 'zh',
+        translation_prompt: '',
+        translation_timeout: 120,
+        batch_translate_merge: false,
+        batch_translate_size: 5,
     });
 
     useEffect(() => {
@@ -74,6 +79,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             const ai_providers = await store.get<any[]>('ai_providers') || [];
             const active_ai_provider = await store.get<string>('active_ai_provider') || '';
             const server_port = await store.get<number>('server_port') || 8080;
+            const translation_prompt = await store.get<string>('translation_prompt') || '';
+            const translation_timeout = await store.get<number>('translation_timeout') || 120;
+            const translation_target_lang = await store.get<string>('translation_target_lang') || 'zh';
+            const batch_translate_merge = await store.get<boolean>('batch_translate_merge') || false;
+            const batch_translate_size = await store.get<number>('batch_translate_size') || 5;
             // theme_mode is passed via props for now, but we should sync it
 
             setSettings({
@@ -82,7 +92,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                 ai_providers,
                 active_ai_provider,
                 theme_mode: mode,
-                server_port
+                translation_target_lang,
+                server_port,
+                translation_prompt,
+                translation_timeout,
+                batch_translate_merge,
+                batch_translate_size
             });
         } catch (e) {
             console.error('Failed to load settings', e);
@@ -100,6 +115,14 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             await store.set('ai_providers', settings.ai_providers);
             await store.set('active_ai_provider', settings.active_ai_provider);
             await store.set('server_port', settings.server_port);
+
+            // Translation settings
+            await store.set('translation_target_lang', settings.translation_target_lang);
+            await store.set('translation_prompt', settings.translation_prompt);
+            await store.set('translation_timeout', settings.translation_timeout);
+            await store.set('batch_translate_merge', settings.batch_translate_merge);
+            await store.set('batch_translate_size', settings.batch_translate_size);
+
             await store.save();
 
             if (portChanged) {
@@ -161,12 +184,19 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                             <InputLabel id="language-select-label">{t('app.language')}</InputLabel>
                             <Select
                                 labelId="language-select-label"
-                                value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
+                                value={(i18n.language || 'en').split('-')[0]}
                                 label={t('app.language')}
                                 onChange={handleLanguageChange}
                             >
                                 <MenuItem value="en">English</MenuItem>
                                 <MenuItem value="zh">简体中文</MenuItem>
+                                <MenuItem value="ja">日本語</MenuItem>
+                                <MenuItem value="ko">한국어</MenuItem>
+                                <MenuItem value="fr">Français</MenuItem>
+                                <MenuItem value="de">Deutsch</MenuItem>
+                                <MenuItem value="es">Español</MenuItem>
+                                <MenuItem value="ru">Русский</MenuItem>
+                                <MenuItem value="it">Italiano</MenuItem>
                             </Select>
                         </FormControl>
                     </Box>
@@ -183,10 +213,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                 {/* AI Tab */}
                 <CustomTabPanel value={tabValue} index={2}>
                     <AiSettings
-                        providers={settings.ai_providers}
-                        activeProvider={settings.active_ai_provider || null}
-                        onUpdateProviders={(providers) => setSettings({ ...settings, ai_providers: providers })}
-                        onUpdateActive={(active) => setSettings({ ...settings, active_ai_provider: active || undefined })}
+                        settings={settings}
+                        onChange={setSettings}
                     />
                 </CustomTabPanel>
 
@@ -216,6 +244,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                                 size="small"
                                 type="number"
                                 helperText={t('app.restart_required_note') || "Restart required to apply changes"}
+                                sx={(theme) => ({
+                                    '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                        filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                        opacity: 1,
+                                    }
+                                })}
                             />
                         </Box>
 

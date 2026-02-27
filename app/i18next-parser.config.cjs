@@ -8,7 +8,7 @@ module.exports = {
         tsx: ['JsxLexer'],
         default: ['JsxLexer']
     },
-    locales: ['en-US', 'zh-CN'],
+    locales: ['en-US', 'zh-CN', 'ja-JP', 'ko-KR', 'de-DE', 'fr-FR', 'es-ES', 'it-IT', 'ru-RU'],
     output: 'src/locales/$LOCALE.json',
     input: ['src/**/*.{js,jsx,ts,tsx}'],
     verbose: true,

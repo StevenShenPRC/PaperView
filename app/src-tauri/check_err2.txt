@@ -1,0 +1,69 @@
+    Checking paperview v0.1.1 (D:\0x00000000\Develop\PaperView\app\src-tauri)
+warning: field `finish_reason` is never read
+  --> src\ai.rs:29:5
+   |
+27 | struct StreamChoice {
+   |        ------------ field in this struct
+28 |     delta: Delta,
+29 |     finish_reason: Option<String>,
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `StreamChoice` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `AiProvider` is never constructed
+ --> src\config.rs:5:12
+  |
+5 | pub struct AiProvider {
+  |            ^^^^^^^^^^
+
+warning: struct `AppSettings` is never constructed
+  --> src\config.rs:15:12
+   |
+15 | pub struct AppSettings {
+   |            ^^^^^^^^^^^
+
+warning: struct `ChatFile` is never constructed
+  --> src\db.rs:85:12
+   |
+85 | pub struct ChatFile {
+   |            ^^^^^^^^
+
+warning: function `update_paper_metadata` is never used
+   --> src\db.rs:438:8
+    |
+438 | pub fn update_paper_metadata(
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `insert_chat_file` is never used
+   --> src\db.rs:771:8
+    |
+771 | pub fn insert_chat_file(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `fetch_doi_metadata` is never used
+ --> src\doi.rs:4:14
+  |
+4 | pub async fn fetch_doi_metadata(doi: &str, proxy_mode: &str, proxy_url: Option<&str>) -> Result<Value, String> {
+  |              ^^^^^^^^^^^^^^^^^^
+
+warning: enum `ProxyConfig` is never used
+ --> src\network.rs:7:10
+  |
+7 | pub enum ProxyConfig {
+  |          ^^^^^^^^^^^
+
+warning: function `create_client` is never used
+  --> src\network.rs:13:8
+   |
+13 | pub fn create_client(_app: &tauri::AppHandle) -> Result<Client, String> {
+   |        ^^^^^^^^^^^^^
+
+warning: function `update_tray_icon` is never used
+  --> src\window_icon.rs:39:8
+   |
+39 | pub fn update_tray_icon(_app: &AppHandle, _theme: tauri::Theme) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: `paperview` (bin "paperview") generated 10 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.42s

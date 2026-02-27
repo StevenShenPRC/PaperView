@@ -57,7 +57,7 @@ pub async fn fetch_metadata_by_crawling(doi: &str, proxy_mode: &str, proxy_url: 
         limiter.check_and_record()?;
     }
 
-    let client = network::create_client_with_config(proxy_mode, proxy_url)
+    let client = network::create_client_with_config(proxy_mode, proxy_url, None)
         .map_err(|e| e.to_string())?;
 
     // 2. Prepare Request with Edge Headers

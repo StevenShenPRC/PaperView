@@ -1,8 +1,17 @@
 # PaperView 开发交接文档 (HANDOVER.md)
 
-## 当前状态 (2026-02-14)
+## 当前状态 (2026-02-26)
 
-### 1. 自绘弹窗与架构精化 (Phase 4.4 - Current)
+### 1. 排队批量翻译 (Phase 4.5 - Current)
+- **排队请求机制**: 修改了 `usePaperActions.ts` 中的 `handleBatchTranslate` 函数，使其根据用户的设置（`batch_translate_size`），将选中的多篇论文切割为若干个小批次请求。
+- **进度与重试保障**: 现在会按照分批队列顺序逐一请求后端并实时更新论文状态显示。如果某一批次中途崩溃或超时，将通过 `Dialog.confirm` 弹窗询问“是否重试后续任务”，增强了大量翻译的情景防断网和稳定度。
+- **多语言适配**: 修改和充实了中英双语下批量翻译的失败恢复（`batch_translate_failed_retry`）、当前执行进度等本地化消息。
+
+### 2. 多语言全局对齐与重翻译 (Phase 4.6)
+- **多语言同步**: 以 `zh-CN.json` 和 `en-US.json` 为基准，对目录下所有其他语言（de, es, fr, it, ja, ko, ru）进行了全量键位对齐。
+- **全量翻译更新**: 重新翻译了所有目标语言的值，确保了 i18next 占位符的一致性以及界面字段的完整性。
+
+### 2. 自绘弹窗与架构精化 (Phase 4.4)
 - **全局自绘弹窗系统**:
   - **组件**: `DialogContext.tsx` 替代了所有原生 `alert` 和 `confirm` 调用，支持 Promise 化调用。
   - **架构**: 引入了 `ThemeContext.tsx` 统一管理主题，并调整了 `main.tsx` 中的 Provider 顺序（`AppThemeProvider` -> `DialogProvider` -> `App`），确保弹窗能正确应用主题。

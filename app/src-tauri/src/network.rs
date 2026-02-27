@@ -25,8 +25,9 @@ pub fn create_client(_app: &tauri::AppHandle) -> Result<Client, String> {
 pub fn create_client_with_config(
     proxy_mode: &str,
     proxy_url: Option<&str>,
+    timeout_secs: Option<u64>,
 ) -> Result<Client, String> {
-    let mut builder = Client::builder().timeout(Duration::from_secs(30));
+    let mut builder = Client::builder().timeout(Duration::from_secs(timeout_secs.unwrap_or(30)));
 
     match proxy_mode {
         "system" => {

@@ -1,333 +1,116 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Box, CircularProgress, Typography, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { Box, CircularProgress, Typography, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import ChatIcon from '@mui/icons-material/Chat';
 import Sidebar from './components/Sidebar';
 import RightSidebar from './components/RightSidebar';
 import SettingsDialog from './components/SettingsDialog';
 import PaperList from './components/PaperList';
 import PDFReader from './components/PDFReader';
-import { Batch, Paper, PaperPdf, Group, PendingContext } from './types';
+import { PendingContext } from './types';
 import { useTranslation } from 'react-i18next';
 
 import { useDialog } from './context/DialogContext';
 import { useFileDrop } from './hooks/useFileDrop';
-import { listen } from '@tauri-apps/api/event';
 import { useAppTheme } from './context/ThemeContext';
 
+import { useAppNotifications } from './hooks/useAppNotifications';
+import { useAppData } from './hooks/useAppData';
+import { usePaperActions } from './hooks/usePaperActions';
+import { useAppLayout } from './hooks/useAppLayout';
+
 function App() {
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [papers, setPapers] = useState<Paper[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  // AI Context State
-  const [pendingContext, setPendingContext] = useState<PendingContext | null>(null);
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Default to collapsed
-
   const { t } = useTranslation();
   const dialog = useDialog();
   const { mode, setMode } = useAppTheme();
 
-  const refreshPapersForBatch = async (batch: Batch) => {
-    // Silent refresh (no global loading)
-    try {
-      const result = await invoke<Paper[]>('get_papers', {
-        journal: batch.journalName,
-        volume: batch.issueVolume,
-        date: batch.issueDate
-      });
-      setPapers(result);
-    } catch (error) {
-      console.error('Failed to refresh papers:', error);
-    }
-  };
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingContext, setPendingContext] = useState<PendingContext | null>(null);
 
+  // Global Context Menu State
+  const [globalMenuPos, setGlobalMenuPos] = useState<{ top: number, left: number } | null>(null);
+  const [globalSelectedText, setGlobalSelectedText] = useState('');
+
+  // Handle global context menu (right click)
   useEffect(() => {
-    loadBatches();
-    loadGroups();
+    const handleContextMenu = (e: MouseEvent) => {
+      // Don't override if clicking on something that already has a context menu (like paper list items)
+      // A simple heuristic: if a selection exists and we're not in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-    let unlistenData: (() => void) | undefined;
-    let unlistenPaper: (() => void) | undefined;
+      const selection = window.getSelection();
+      const text = selection?.toString().trim();
 
-    const setupListeners = async () => {
-      console.log("Setting up event listeners...");
-
-      unlistenData = await listen('data-updated', (event: any) => {
-        console.log('Frontend received [data-updated]:', event.payload);
-        loadBatches();
-
-        if (!event.payload) {
-          return;
-        }
-
-        setSelectedBatch(currentBatch => {
-          if (currentBatch &&
-            currentBatch.journalName === event.payload.journalName &&
-            currentBatch.issueVolume === event.payload.issueVolume) {
-            console.log("Refreshing current batch papers...");
-            refreshPapersForBatch(currentBatch);
-          }
-          return currentBatch;
-        });
-      });
-
-      unlistenPaper = await listen('paper-updated', (event: any) => {
-        console.log('Frontend received [paper-updated]:', event.payload);
-        const updatedPaper = event.payload as Paper;
-        setPapers(prev => {
-          const exists = prev.find(p => p.id === updatedPaper.id);
-          if (exists) {
-            console.log("Updating paper in list:", updatedPaper.title);
-            return prev.map(p => p.id === updatedPaper.id ? updatedPaper : p);
-          }
-          return prev;
-        });
-      });
-
-      console.log("Event listeners set up successfully.");
+      if (text && text.length > 0) {
+        // Prevent default only if we are actually going to show our menu
+        // and let specific components stopPropagation if they want to handle it themselves
+        setGlobalSelectedText(text);
+        setGlobalMenuPos({ top: e.clientY, left: e.clientX });
+        e.preventDefault();
+      } else {
+        setGlobalMenuPos(null);
+      }
     };
 
-    setupListeners();
+    const handleClick = () => {
+      setGlobalMenuPos(null);
+    };
+
+    window.addEventListener('contextmenu', handleContextMenu);
+    window.addEventListener('click', handleClick);
 
     return () => {
-      if (unlistenData) unlistenData();
-      if (unlistenPaper) unlistenPaper();
+      window.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener('click', handleClick);
     };
   }, []);
 
-  const loadBatches = async () => {
-    try {
-      const result = await invoke<Batch[]>('get_batches');
-      setBatches(result);
-    } catch (error) {
-      console.error('Failed to load batches:', error);
-    }
-  };
-
-  const loadGroups = async () => {
-    try {
-      const result = await invoke<Group[]>('get_groups');
-      setGroups(result);
-    } catch (error) {
-      console.error('Failed to load groups:', error);
-    }
-  };
-
-  const handleSelectBatch = async (batch: Batch) => {
-    setSelectedBatch(batch);
-    setSelectedGroup(null); // Clear group selection
-    setLoading(true);
-    try {
-      const result = await invoke<Paper[]>('get_papers', {
-        journal: batch.journalName,
-        volume: batch.issueVolume,
-        date: batch.issueDate
+  const handleGlobalContextAction = (mode: 'new' | 'append') => {
+    if (globalSelectedText) {
+      setPendingContext({
+        items: [{
+          id: Date.now().toString(),
+          text: globalSelectedText,
+          source: t('app.global_selection') || 'Global Selection',
+          label: t('app.selected_text') || 'Selected Text'
+        }],
+        mode
       });
-      setPapers(result);
-    } catch (error) {
-      console.error('Failed to load papers:', error);
-    } finally {
-      setLoading(false);
     }
+    setGlobalMenuPos(null);
   };
 
-  const handleSelectGroup = async (group: Group) => {
-    setSelectedGroup(group);
-    setSelectedBatch(null); // Clear batch selection
-    setLoading(true);
-    try {
-      const result = await invoke<Paper[]>('get_papers_by_group', { groupId: group.id });
-      setPapers(result);
-    } catch (error) {
-      console.error('Failed to load group papers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    snackbarOpen, snackbarMessage, snackbarSeverity, handleCloseSnackbar, showSnackbar,
+    rateLimitOpen, setRateLimitOpen, rateLimitMessage, showRateLimitError
+  } = useAppNotifications();
 
-  const handleCreateGroup = async (name: string) => {
-    try {
-      await invoke('create_group', { name });
-      loadGroups();
-      showSnackbar(t('app.group_created') || "Group created", 'success');
-    } catch (error) {
-      console.error('Failed to create group:', error);
-      showSnackbar(t('app.error_creating_group') || "Failed to create group", 'error');
-    }
-  };
+  const {
+    batches, selectedBatch, handleSelectBatch,
+    groups, selectedGroup, handleSelectGroup, loadGroups,
+    papers, setPapers, loading
+  } = useAppData();
 
-  const handleRenameGroup = async (group: Group, name: string) => {
-    try {
-      await invoke('rename_group', { id: group.id, newName: name });
-      loadGroups();
-      // If renamed group is selected, update selection? 
-      // It's safer to just reload.
-      if (selectedGroup?.id === group.id) {
-        setSelectedGroup(prev => prev ? ({ ...prev, name }) : null);
-      }
-      showSnackbar(t('app.group_renamed') || "Group renamed", 'success');
-    } catch (error) {
-      console.error('Failed to rename group:', error);
-      showSnackbar(t('app.error_renaming_group') || "Failed to rename group", 'error');
-    }
-  };
+  const {
+    handleCreateGroup, handleRenameGroup, handleDeleteGroup,
+    handleUpdateMetadata, handleTranslate, handleBatchTranslate,
+    handleAddToGroup, handleRemoveFromGroup
+  } = usePaperActions({
+    dialog, t, showSnackbar, showRateLimitError, setPapers, loadGroups, selectedGroup, handleSelectGroup
+  });
 
-  const handleDeleteGroup = async (group: Group) => {
-    const confirmed = await dialog.confirm(
-      t('app.confirm_delete_group', { name: group.name }) || `Are you sure you want to delete group "${group.name}"?`,
-      { title: t('app.delete_group') || "Delete Group" }
-    );
+  const {
+    sidebarCollapsed, setSidebarCollapsed,
+    activePaper, activePdf, setActivePdf,
+    pdfCollapsed,
+    readerWidth, isResizing,
+    handleReadPdf, handleCollapseReader, handleExpandReader, handleMouseDown
+  } = useAppLayout();
 
-    if (confirmed) {
-      try {
-        await invoke('delete_group', { id: group.id });
-        loadGroups();
-        if (selectedGroup?.id === group.id) {
-          setSelectedGroup(null);
-          setPapers([]);
-        }
-        showSnackbar(t('app.group_deleted') || "Group deleted", 'success');
-      } catch (error) {
-        console.error('Failed to delete group:', error);
-        showSnackbar(t('app.error_deleting_group') || "Failed to delete group", 'error');
-      }
-    }
-  };
-
-  // Snackbar State
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
-
-  // Rate Limit Dialog State
-  const [rateLimitOpen, setRateLimitOpen] = useState(false);
-  const [rateLimitMessage, setRateLimitMessage] = useState('');
-
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
-  };
-
-  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
-  };
-
-  const handleUpdateMetadata = async (paper: Paper) => {
-    try {
-      // Don't set global loading to true to avoid full list refresh
-      // setLoading(true); 
-      const updatedPaper = await invoke<Paper>('update_metadata', { id: paper.id, doi: paper.doi });
-      setPapers(prev => prev.map(p => p.id === updatedPaper.id ? updatedPaper : p));
-    } catch (error: any) {
-      console.error('Failed to update metadata:', error);
-      const errMsg = String(error);
-      if (errMsg.includes("Publisher policy limit") || errMsg.includes("risk control")) {
-        setRateLimitMessage(t('app.rate_limit_error') || `Updates limited by publisher: ${errMsg}`);
-        setRateLimitOpen(true);
-      } else {
-        showSnackbar(`Failed to update: ${errMsg}`, 'error');
-      }
-      throw error; // Propagate to PaperList to stop spinner
-    } finally {
-      // setLoading(false);
-    }
-  };
-
-  const handleTranslate = async (paper: Paper) => {
-    try {
-      // Don't set global loading to true to avoid full list refresh if not needed, 
-      // but here we might want to show some indicator on the card.
-      // For now, let's just let it be async update.
-      const updatedPaper = await invoke<Paper>('translate_paper', { id: paper.id });
-      setPapers(prev => prev.map(p => p.id === updatedPaper.id ? updatedPaper : p));
-    } catch (error) {
-      console.error('Failed to translate:', error);
-      dialog.alert('Failed to translate: ' + error);
-    }
-  };
-
-  const handleAddToGroup = async (paperIds: number[], groupId: number) => {
-    try {
-      await Promise.all(paperIds.map(pid => invoke('add_paper_to_group', { paperId: pid, groupId })));
-
-      showSnackbar(t('app.added_to_group') || "Added to group", 'success');
-      // If we are currently viewing this group, refresh
-      if (selectedGroup?.id === groupId) {
-        handleSelectGroup(selectedGroup);
-      }
-    } catch (error) {
-      console.error('Failed to add to group:', error);
-      showSnackbar(t('app.error_adding_to_group') || "Failed to add to group", 'error');
-    }
-  };
-
-  const handleRemoveFromGroup = async (paperIds: number[], groupId: number) => {
-    try {
-      await Promise.all(paperIds.map(pid => invoke('remove_paper_from_group', { paperId: pid, groupId })));
-
-      showSnackbar(t('app.removed_from_group') || "Removed from group", 'success');
-      // Refresh current view if it's the group
-      if (selectedGroup?.id === groupId) {
-        handleSelectGroup(selectedGroup);
-      }
-    } catch (error) {
-      console.error('Failed to remove from group:', error);
-      showSnackbar(t('app.error_removing_from_group') || "Failed to remove from group", 'error');
-    }
-  };
-
-  /*
-  const handleSettingsOpen = () => {
-    setSettingsOpen(true);
-  };
-
-  const handleSettingsClose = () => {
-    setSettingsOpen(false);
-  };
-  */
-
-  const [activePaper, setActivePaper] = useState<Paper | null>(null);
-  const [activePdf, setActivePdf] = useState<PaperPdf | null>(null);
-  const [pdfCollapsed, setPdfCollapsed] = useState(false);
-  const [userSidebarCollapsed, setUserSidebarCollapsed] = useState(true);
-  const [readerWidth, setReaderWidth] = useState(800); // Default width in pixels
-  const [isResizing, setIsResizing] = useState(false);
-
-  const handleReadPdf = (paper: Paper, pdf: PaperPdf) => {
-    if (!activePdf || pdfCollapsed) {
-      // Entering reader mode: save current sidebar state and collapse it
-      setUserSidebarCollapsed(sidebarCollapsed);
-      setSidebarCollapsed(true);
-    }
-    setActivePaper(paper);
-    setActivePdf(pdf);
-    setPdfCollapsed(false);
-  };
-
-  // Collapse reader: unmounts PDFReader component (releases resources) but keeps paper/pdf references
-  const handleCollapseReader = () => {
-    setPdfCollapsed(true);
-    // Restore user's manual sidebar state
-    setSidebarCollapsed(userSidebarCollapsed);
-  };
-
-  // Expand reader: re-mounts PDFReader with preserved paper/pdf references
-  const handleExpandReader = () => {
-    setPdfCollapsed(false);
-    setUserSidebarCollapsed(sidebarCollapsed);
-    setSidebarCollapsed(true);
-  };
-
-  // File Drop Handler
   const { isDragging, dragZone } = useFileDrop({
     onDrop: async (files, zone) => {
-      // console.log("Dropped files:", files, "in zone:", zone);
-
-      // Handle RIS files (Global or List Zone)
       const risFiles = files.filter(f => f.name.toLowerCase().endsWith('.ris'));
       if (risFiles.length > 0) {
         const confirmed = await dialog.confirm(
@@ -338,9 +121,6 @@ function App() {
         if (confirmed) {
           try {
             for (const file of risFiles) {
-              // Currently web File API doesn't give full path in some contexts, but Tauri Drop usually works if we use specific plugins. 
-              // However, default HTML5 drag and drop gives File object.
-              // We need to read content.
               const text = await file.text();
               await invoke('import_ris', {
                 risContent: text,
@@ -348,7 +128,6 @@ function App() {
               });
             }
             showSnackbar(t('app.import_success') || "Import successful", 'success');
-            // Refresh manually if needed, but backend emits event
           } catch (e) {
             console.error("Import failed", e);
             showSnackbar("Import failed: " + e, 'error');
@@ -357,9 +136,8 @@ function App() {
         return;
       }
 
-      // Handle PDF files -> Add to AI Context if dropped on RightSidebar
       if (zone === 'ai-sidebar') {
-        const contextFiles = files.filter(f => !f.name.toLowerCase().endsWith('.ris')); // All non-ris
+        const contextFiles = files.filter(f => !f.name.toLowerCase().endsWith('.ris'));
         if (contextFiles.length > 0) {
           const confirmed = await dialog.confirm(
             t('app.add_context_confirm', { count: contextFiles.length }) || `Add ${contextFiles.length} file(s) as context for AI?`,
@@ -367,51 +145,12 @@ function App() {
           );
 
           if (confirmed) {
-            // We need to handle this. Since we can't easily upload files to context yet without reading them,
-            // we might need to rely on what PendingContext expects.
-            // Currently PendingContext expects text items or file paths?
-            // If we use file.path (non-standard), it might work in Tauri.
-            // Let's assume we can get path or we read text.
-            // PendingContext item structure: { id, text, source, label }
-            // For PDF, we can't read text easily here without backend.
-            // Maybe just pass file names as placeholder or implement later?
-            // "拖放到AI侧栏作为附件扔给AI当上下文" -> imply attachments.
-            // But PendingContext is text-based.
-            // Let's defer actual implementation or just show not implemented.
             showSnackbar("File context attachment is generic placeholder for now.", 'info');
           }
         }
       }
     }
   });
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsResizing(true);
-    e.preventDefault();
-  };
-
-  useEffect(() => {
-    if (!isResizing) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      // Calculate new width: viewport width - mouse X - RightSidebar width (approx 350)
-      const newWidth = window.innerWidth - e.clientX - 350;
-      if (newWidth > 400 && newWidth < window.innerWidth - 600) {
-        setReaderWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
 
   return (
     <>
@@ -431,13 +170,12 @@ function App() {
           onToggleCollapse={() => {
             setSidebarCollapsed(!sidebarCollapsed);
             if (!activePdf) {
-              setUserSidebarCollapsed(!sidebarCollapsed);
+              setSidebarCollapsed(!sidebarCollapsed);
             }
           }}
         />
 
         <Box component="main" sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* Paper List Column - shrinks when reader is active */}
           <Box sx={{
             flexGrow: (activePdf && !pdfCollapsed) ? 0 : 1,
             width: (activePdf && !pdfCollapsed) ? `calc(100% - ${readerWidth}px)` : '100%',
@@ -458,6 +196,7 @@ function App() {
                   papers={papers}
                   onUpdateMetadata={handleUpdateMetadata}
                   onTranslate={handleTranslate}
+                  onBatchTranslate={handleBatchTranslate}
                   onReadPdf={handleReadPdf}
                   batch={selectedBatch}
                   groups={groups}
@@ -480,6 +219,7 @@ function App() {
                   papers={papers}
                   onUpdateMetadata={handleUpdateMetadata}
                   onTranslate={handleTranslate}
+                  onBatchTranslate={handleBatchTranslate}
                   onReadPdf={handleReadPdf}
                   batch={null}
                   groups={groups}
@@ -504,7 +244,6 @@ function App() {
             )}
           </Box>
 
-          {/* Resizer Handle */}
           {activePdf && !pdfCollapsed && (
             <Box
               onMouseDown={handleMouseDown}
@@ -519,7 +258,6 @@ function App() {
             />
           )}
 
-          {/* Reader Column - only rendered when not collapsed (unmounts to release resources) */}
           {activePaper && activePdf && !pdfCollapsed && (
             <Box sx={{ width: `${readerWidth}px`, height: '100%', overflow: 'hidden' }}>
               <PDFReader
@@ -549,6 +287,7 @@ function App() {
         mode={mode}
         onModeChange={setMode}
       />
+
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
@@ -558,16 +297,14 @@ function App() {
       <Dialog
         open={rateLimitOpen}
         onClose={() => setRateLimitOpen(false)}
-        aria-labelledby="rate-limit-dialog-title"
-        aria-describedby="rate-limit-dialog-description"
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle id="rate-limit-dialog-title" color="error">
+        <DialogTitle color="error">
           {t('app.warning') || "Warning"}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="rate-limit-dialog-description" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+          <DialogContentText sx={{ color: 'text.primary', fontWeight: 'bold' }}>
             {rateLimitMessage}
           </DialogContentText>
           <DialogContentText sx={{ mt: 2 }}>
@@ -581,7 +318,6 @@ function App() {
         </DialogActions>
       </Dialog>
 
-      {/* Drop Overlay */}
       {isDragging && (
         <Box sx={{
           position: 'fixed',
@@ -591,7 +327,7 @@ function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          pointerEvents: 'none' // Let events pass through to target zones
+          pointerEvents: 'none'
         }}>
           <Box sx={{
             bgcolor: 'background.paper',
@@ -606,6 +342,28 @@ function App() {
           </Box>
         </Box>
       )}
+
+      {/* Global Context Menu */}
+      <Menu
+        open={globalMenuPos !== null}
+        onClose={() => setGlobalMenuPos(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          globalMenuPos !== null
+            ? { top: globalMenuPos.top, left: globalMenuPos.left }
+            : undefined
+        }
+        sx={{ zIndex: 9999 }}
+      >
+        <MenuItem onClick={() => handleGlobalContextAction('new')}>
+          <ListItemIcon><ChatIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>{t('app.chat_new_context') || "New Chat with Context"}</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleGlobalContextAction('append')}>
+          <ListItemIcon><PlaylistAddIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>{t('app.chat_append_context') || "Append to Chat"}</ListItemText>
+        </MenuItem>
+      </Menu>
     </>
   );
 }

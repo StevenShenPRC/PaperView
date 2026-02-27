@@ -1,0 +1,61 @@
+# 论文管理与翻译增强及架构优化计划
+
+本计划旨在解决手动导入批次时间模糊问题、增强翻译自定义能力、扩展多语言支持、优化页面性能并重构后端代码结构。
+
+## 用户评审要求
+> [!IMPORTANT]
+> **关于后端重构**：我计划将 [main.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/main.rs) 中的具体指令逻辑拆分到 `commands/` 目录下。这会显著改善代码的可维护性，但会涉及大量函数移动。
+> **关于翻译提示词**：默认提示词将包含硬编码的数据结构约束，确保 AI 返回正确的 JSON 格式。
+
+## 拟议变更
+
+### 1. 批次管理与导入优化
+#### [MODIFY] [db.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/db.rs)
+- 修改 [insert_paper](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/db.rs#340-360)：确保 `issueDate`（手动导入时）统一使用 UTC 时间戳存储。
+- 确保护理同一批次的所有论文使用完全相同的 UTC 字符串。
+
+#### [MODIFY] [main.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/main.rs)
+- 在导入指令开始时捕获当前 UTC 时间，透传给数据库操作。
+
+#### [MODIFY] [Sidebar.tsx](file:///d:/0x00000000/Develop/PaperView/app/src/components/Sidebar.tsx) & [PaperList.tsx](file:///d:/0x00000000/Develop/PaperView/app/src/components/PaperList.tsx)
+- 在渲染批次时间或论文详情时，将 UTC 字符串转换为用户系统的本地时区。
+
+### 2. 前端交互与性能优化
+#### [MODIFY] [PaperList.tsx](file:///d:/0x00000000/Develop/PaperView/app/src/components/PaperList.tsx)
+- **选择性能优化**：修改选中项的 CSS 样式。避免使用会导致重排（Reflow）的属性（如 border 变化引起的大小变化），改用背景色或 box-shadow 实现选中效果。
+- **视觉优化**：调整选中项的底色，确保其在深色和浅色模式下均有良好的辨识度和美观度。
+- **批量操作交互**：在 Sidebar 批次栏增加复选框，实现批次内论文的全选联动。
+
+### 3. 主题适配与 UI 细化
+#### [MODIFY] 全局组件库
+- 审计所有组件的 [sx](file:///d:/0x00000000/Develop/PaperView/app/src/App.tsx) 属性，确保颜色引用基于主题（`theme.palette`）。
+- **重点优化**：设置对话框中的数字微调控件（Stepper/NumberInput），确保其增减按钮、边框在深色/浅色模式下具有正确的对比度。
+
+
+### 3. AI 翻译功能增强
+#### [MODIFY] [main.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/main.rs) -> [commands/ai.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/commands/ai.rs)
+- 在构建 Prompt 时，检测用户输入的 `{{lang}}` 占位符并替换为设置中的目标语言。
+- 强制在 Prompt 末尾追加 JSON 格式约束指令。
+
+### 4. 国际化 (i18n) 扩展
+#### [NEW] [locales](file:///d:/0x00000000/Develop/PaperView/app/src/locales/)
+- 增加主流语言支持：`ja-JP.json` (日语), `ko-KR.json` (韩语), `fr-FR.json` (法语), `de-DE.json` (德语), `es-ES.json` (西班牙语), `ru-RU.json` (俄语), `it-IT.json` (意大利语)。
+
+### 5. 后端架构重构
+- 创建 `src-tauri/src/commands/` 文件夹。
+- 将 [main.rs](file:///d:/0x00000000/Develop/PaperView/app/src-tauri/src/main.rs) 拆分为：
+    - `commands/paper.rs`: 处理论文导入、元数据、导出。
+    - `commands/group.rs`: 处理分组逻辑。
+    - `commands/ai.rs`: 处理翻译、聊天、嵌入。
+    - `commands/history.rs`: 处理搜索和历史记录。
+
+## 验证计划
+
+### 自动化测试
+- 运行 `cargo check` 确保重构后编译通过。
+- 使用模拟数据进行批量导入，验证批次时间的一致性。
+
+### 手动验证
+- 在设置中修改目标语言，观察翻译 Prompt 是否正确替换 `{{lang}}`。
+- 切换多种界面语言，验证多语言翻译显示。
+- 在侧边栏点击批次复选框，验证是否能一次性选中该批次所有论文。

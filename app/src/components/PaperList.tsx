@@ -1,38 +1,34 @@
 import React from 'react';
 import {
-    Card, CardContent, Typography, CardActions, Button,
-    Box, Chip, Link, Tooltip, IconButton, Menu,
+    Box, Typography, Menu,
     MenuItem, ListItemIcon, ListItemText, Divider,
-    Checkbox, AppBar, Toolbar, Fade,
-    Accordion, AccordionSummary, AccordionDetails
+    Checkbox, Accordion, AccordionSummary, AccordionDetails,
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Paper, PaperPdf, Group, PendingContext, ContextItem } from '../types';
-import { Batch } from '../types';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ChatIcon from '@mui/icons-material/Chat';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import TranslateIcon from '@mui/icons-material/Translate';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DeleteIcon from '@mui/icons-material/Delete';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderIcon from '@mui/icons-material/Folder';
-import FolderOffIcon from '@mui/icons-material/FolderOff';
-import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import { useDialog } from '../context/DialogContext';
 import { Virtuoso } from 'react-virtuoso';
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
+
+import { Paper, PaperPdf, Group, PendingContext, ContextItem, Batch } from '../types';
+import { formatLocalTime } from '../utils/time';
+import { PaperCardItem } from './PaperList/PaperCardItem';
+import { BatchActionToolbar } from './PaperList/BatchActionToolbar';
 
 interface PaperListProps {
     papers: Paper[];
     onUpdateMetadata: (paper: Paper) => Promise<void>;
     onTranslate: (paper: Paper) => void;
+    onBatchTranslate?: (papers: Paper[]) => void;
     onReadPdf?: (paper: Paper, pdf: PaperPdf) => void;
     batch: Batch | null;
     /** When true (PDF reader is open), abstracts collapse by default */
@@ -44,141 +40,8 @@ interface PaperListProps {
     onContextSelect?: (ctx: PendingContext) => void;
 }
 
-// Maximum lines to show before collapsing
-const ABSTRACT_COLLAPSED_LINES = 3;
-const LINE_HEIGHT_EM = 1.5;
-const COLLAPSED_MAX_HEIGHT = `${ABSTRACT_COLLAPSED_LINES * LINE_HEIGHT_EM}em`;
-
-/**
- * A collapsible text block with a text-link toggle ("展开"/"收起").
- * The entire gradient overlay area is clickable.
- * Collapsed state is only used when readerActive=true.
- */
-const CollapsibleText: React.FC<{
-    text: string;
-    isHighlighted?: boolean;
-    readerActive: boolean;
-    expandLabel: string;
-    collapseLabel: string;
-    onContextMenu?: (e: React.MouseEvent, text: string) => void;
-}> = ({ text, isHighlighted, readerActive, expandLabel, collapseLabel, onContextMenu }) => {
-    const [expanded, setExpanded] = React.useState(false);
-    const textRef = React.useRef<HTMLDivElement>(null);
-    const [needsCollapse, setNeedsCollapse] = React.useState(false);
-
-    // Check if text actually overflows the collapsed height
-    React.useEffect(() => {
-        if (textRef.current && readerActive) {
-            const lineHeightPx = parseFloat(getComputedStyle(textRef.current).lineHeight) || 20;
-            const maxHeight = ABSTRACT_COLLAPSED_LINES * lineHeightPx;
-            setNeedsCollapse(textRef.current.scrollHeight > maxHeight + 4);
-        }
-    }, [text, readerActive]);
-
-    // When reader becomes inactive, force expand
-    React.useEffect(() => {
-        if (!readerActive) {
-            setExpanded(false);
-        }
-    }, [readerActive]);
-
-    const isCollapsed = readerActive && !expanded && needsCollapse;
-    const showToggle = readerActive && needsCollapse;
-
-    return (
-        <Box sx={{ position: 'relative', mb: 1 }}>
-            <Box
-                sx={{
-                    overflow: isCollapsed ? 'hidden' : 'visible',
-                    maxHeight: isCollapsed ? COLLAPSED_MAX_HEIGHT : 'none',
-                    transition: 'max-height 0.3s ease',
-                }}
-            >
-                <Typography
-                    ref={textRef}
-                    variant="body2"
-                    color={isHighlighted ? 'text.primary' : 'text.secondary'}
-                    sx={{
-                        lineHeight: LINE_HEIGHT_EM,
-                        ...((isHighlighted && !isCollapsed) && {
-                            bgcolor: 'action.selected',
-                            p: 1,
-                            borderRadius: 1,
-                        }),
-                    }}
-                    onContextMenu={(e) => onContextMenu && onContextMenu(e, text)}
-                >
-                    {text}
-                </Typography>
-            </Box>
-
-            {/* Gradient overlay + expand trigger (entire area clickable) */}
-            {isCollapsed && (
-                <Box
-                    onClick={() => setExpanded(true)}
-                    sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: '2.5em',
-                        background: (theme) =>
-                            `linear-gradient(transparent, ${isHighlighted
-                                ? theme.palette.action.selected
-                                : theme.palette.background.paper
-                            })`,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'flex-end',
-                        justifyContent: 'flex-end',
-                        pr: 1,
-                        pb: 0.25,
-                    }}
-                >
-                    <Typography
-                        variant="caption"
-                        color="primary"
-                        sx={{
-                            fontWeight: 500,
-                            '&:hover': { textDecoration: 'underline' },
-                        }}
-                    >
-                        {expandLabel}
-                    </Typography>
-                </Box>
-            )}
-
-            {/* Collapse link */}
-            {showToggle && expanded && (
-                <Box
-                    onClick={() => setExpanded(false)}
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        cursor: 'pointer',
-                        pr: 1,
-                        mt: 0.25,
-                    }}
-                >
-                    <Typography
-                        variant="caption"
-                        color="primary"
-                        sx={{
-                            fontWeight: 500,
-                            '&:hover': { textDecoration: 'underline' },
-                        }}
-                    >
-                        {collapseLabel}
-                    </Typography>
-                </Box>
-            )}
-        </Box>
-    );
-};
-
-
 const PaperList: React.FC<PaperListProps> = ({
-    papers, onUpdateMetadata, onTranslate, onReadPdf, batch, readerActive = false,
+    papers, onUpdateMetadata, onTranslate, onBatchTranslate, onReadPdf, batch, readerActive = false,
     groups, selectedGroupId, onAddToGroup, onRemoveFromGroup, onContextSelect
 }) => {
     const { t } = useTranslation();
@@ -203,40 +66,41 @@ const PaperList: React.FC<PaperListProps> = ({
     const [contextSourcePaper, setContextSourcePaper] = React.useState<Paper | null>(null);
     const [contextSourceLabel, setContextSourceLabel] = React.useState('');
 
-    // Reset selection when list changes significantly (e.g. batch change)
-    // Actually, papers prop changes reference every time update happens.
-    // We should only reset when the batch/group context changes.
-    // Use a ref to track current context ID?
-    // Or just manually reset in parent? 
-    // Ideally, parent should control selection if we want valid state.
-    // But local state is easier. Let's assume papers completely change when batch changes.
     React.useEffect(() => {
         setSelectedIds(new Set());
+        setLastSelectedId(null);
     }, [batch?.id, selectedGroupId]);
 
-    const handleSelectPaper = (id: number, shiftKey: boolean) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-            setLastSelectedId(null);
-        } else {
-            newSelected.add(id);
-            // Handle shift select (range)
-            if (shiftKey && lastSelectedId !== null) {
-                const start = papers.findIndex(p => p.id === lastSelectedId);
-                const end = papers.findIndex(p => p.id === id);
-                if (start !== -1 && end !== -1) {
-                    const lower = Math.min(start, end);
-                    const upper = Math.max(start, end);
-                    for (let i = lower; i <= upper; i++) {
-                        newSelected.add(papers[i].id);
+    const handleSelectPaper = React.useCallback((id: number, shiftKey: boolean) => {
+        setSelectedIds(prev => {
+            const newSelected = new Set(prev);
+
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+                setLastSelectedId(id); // Keep last selected for shift-click range start, even if deselected
+            } else {
+                newSelected.add(id);
+
+                // Handle shift select (range)
+                if (shiftKey && lastSelectedId !== null) {
+                    const start = papers.findIndex(p => p.id === lastSelectedId);
+                    const end = papers.findIndex(p => p.id === id);
+
+                    if (start !== -1 && end !== -1) {
+                        const lower = Math.min(start, end);
+                        const upper = Math.max(start, end);
+
+                        // Add all items in range
+                        for (let i = lower; i <= upper; i++) {
+                            newSelected.add(papers[i].id);
+                        }
                     }
                 }
+                setLastSelectedId(id);
             }
-            setLastSelectedId(id);
-        }
-        setSelectedIds(newSelected);
-    };
+            return newSelected;
+        });
+    }, [papers, lastSelectedId]);
 
     const handleSelectAll = () => {
         if (selectedIds.size === papers.length) {
@@ -259,7 +123,7 @@ const PaperList: React.FC<PaperListProps> = ({
         }
     };
 
-    const handleUpdateClick = async (paper: Paper) => {
+    const handleUpdateClick = React.useCallback(async (paper: Paper) => {
         setUpdatingIds(prev => new Set(prev).add(paper.id));
         try {
             await onUpdateMetadata(paper);
@@ -272,17 +136,24 @@ const PaperList: React.FC<PaperListProps> = ({
                 return newSet;
             });
         }
-    };
+    }, [onUpdateMetadata]);
 
-    const handleBatchTranslate = async () => {
+    const handleBatchTranslate = () => {
         const selectedPapers = papers.filter(p => selectedIds.has(p.id));
-        for (const paper of selectedPapers) {
-            onTranslate(paper);
+        if (onBatchTranslate) {
+            onBatchTranslate(selectedPapers);
+        } else {
+            for (const paper of selectedPapers) {
+                onTranslate(paper);
+            }
         }
         setSelectedIds(new Set());
     };
 
     const [exportMenuAnchor, setExportMenuAnchor] = React.useState<null | HTMLElement>(null);
+    const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
+    const [exportContent, setExportContent] = React.useState('');
+    const [exportFormat, setExportFormat] = React.useState<'ris' | 'bibtex'>('ris');
 
     const handleExportReferences = async (format: 'ris' | 'bibtex') => {
         setExportMenuAnchor(null);
@@ -290,21 +161,44 @@ const PaperList: React.FC<PaperListProps> = ({
             const paperIds = Array.from(selectedIds);
             const content: string = await invoke('export_references', { paperIds, format });
 
-            // Create a blob and download it
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `export.${format}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            setSelectedIds(new Set());
+            setExportContent(content);
+            setExportFormat(format);
+            setExportDialogOpen(true);
         } catch (e) {
             console.error("Export failed:", e);
             dialog.alert("Export failed: " + e);
+        }
+    };
+
+    const handleExportCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(exportContent);
+            dialog.alert(t('app.copied') || "Copied");
+        } catch (e) {
+            console.error("Copy failed:", e);
+        }
+    };
+
+    const handleExportSave = async () => {
+        try {
+            const path = await save({
+                filters: [{
+                    name: exportFormat === 'ris' ? 'RIS File' : 'BibTeX File',
+                    extensions: [exportFormat === 'ris' ? 'ris' : 'bib']
+                }],
+                defaultPath: `export.${exportFormat === 'ris' ? 'ris' : 'bib'}`
+            });
+
+            if (path) {
+                await writeTextFile(path, exportContent);
+                setExportDialogOpen(false);
+                setExportContent('');
+                setSelectedIds(new Set()); // Clear selection after successful save
+                dialog.alert(t('app.export_success') || "Export Successful");
+            }
+        } catch (e) {
+            console.error("Save failed:", e);
+            dialog.alert("Save failed: " + e);
         }
     };
 
@@ -316,7 +210,7 @@ const PaperList: React.FC<PaperListProps> = ({
         setSelectedIds(new Set());
     };
 
-    const handleAttachPdf = async (paper: Paper) => {
+    const handleAttachPdf = React.useCallback(async (paper: Paper) => {
         try {
             const filePath = await open({
                 multiple: false,
@@ -342,7 +236,7 @@ const PaperList: React.FC<PaperListProps> = ({
                 return newSet;
             });
         }
-    };
+    }, [dialog]);
 
     const handleDeletePdf = async (pdf: PaperPdf) => {
         try {
@@ -359,22 +253,19 @@ const PaperList: React.FC<PaperListProps> = ({
         setPdfMenuPaper(null);
     };
 
-    const handleOpenPdfMenu = (event: React.MouseEvent<HTMLElement>, paper: Paper) => {
+    const handleOpenPdfMenu = React.useCallback((event: React.MouseEvent<HTMLElement>, paper: Paper) => {
         setPdfMenuAnchor(event.currentTarget as HTMLElement);
         setPdfMenuPaper(paper);
-    };
+    }, []);
 
     const handleClosePdfMenu = () => {
         setPdfMenuAnchor(null);
         setPdfMenuPaper(null);
     };
 
-
-    // MUI Menu doesn't support "anchorPosition" with just state easily unless we use a virtual element.
-    // Let's use virtual element for mouse position.
     const [contextMenuPos, setContextMenuPos] = React.useState<{ top: number, left: number } | null>(null);
 
-    const handleContextMenuOpen = (event: React.MouseEvent, text: string, paper: Paper, label: string) => {
+    const handleContextMenuOpen = React.useCallback((event: React.MouseEvent, text: string, paper: Paper, label: string) => {
         event.preventDefault();
         event.stopPropagation();
         const selection = window.getSelection();
@@ -387,7 +278,7 @@ const PaperList: React.FC<PaperListProps> = ({
             top: event.clientY,
             left: event.clientX,
         });
-    };
+    }, []);
 
     const handleContextAction = (action: 'copy' | 'new' | 'append') => {
         if (!selectedContextText) return;
@@ -411,174 +302,26 @@ const PaperList: React.FC<PaperListProps> = ({
         setContextMenuPos(null);
     };
 
-    const renderPaperCard = (paper: Paper) => {
-        const isSelected = selectedIds.has(paper.id);
-        const hasPdfs = paper.pdfs && paper.pdfs.length > 0;
-        const abstractText = paper.abstract || t('app.no_abstract') || "No abstract available";
-        const abstractCn = paper.abstract_cn;
-
+    const renderPaperCard = React.useCallback((paper: Paper) => {
         return (
-            <Box sx={{ mb: 2 }}>
-                <Card
-                    elevation={isSelected ? 4 : 1}
-                    sx={{
-                        border: isSelected ? 2 : 1,
-                        borderColor: isSelected ? 'primary.main' : 'divider',
-                        transition: 'box-shadow 0.2s, border-color 0.2s',
-                        '&:hover': {
-                            boxShadow: 3,
-                            borderColor: isSelected ? 'primary.main' : 'primary.light'
-                        },
-                        position: 'relative'
-                    }}
-                >
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            zIndex: 1
-                        }}
-                    >
-                        <Checkbox
-                            size="small"
-                            checked={isSelected}
-                            onChange={(e) => handleSelectPaper(paper.id, (e.nativeEvent as MouseEvent).shiftKey)}
-                        />
-                    </Box>
-
-                    <CardContent onClick={(e) => {
-                        // Prevent click from toggling abstract if clicking checkbox or buttons
-                        if ((e.target as HTMLElement).closest('.MuiButtonBase-root')) return;
-                        handleSelectPaper(paper.id, (e.nativeEvent as MouseEvent).shiftKey);
-                    }} sx={{ cursor: 'pointer', pt: 3 }}>
-                        <Typography variant="h6" gutterBottom sx={{ pr: 4 }}>
-                            {paper.title}
-                        </Typography>
-
-                        {paper.title_cn && (
-                            <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 500 }}>
-                                {paper.title_cn}
-                            </Typography>
-                        )}
-
-                        <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <Chip size="small" label={paper.journalName || t('app.unknown_journal')} variant="outlined" />
-                            <Chip size="small" label={paper.issueVolume || t('app.unknown_volume')} variant="outlined" />
-                            <Chip size="small" label={paper.issueDate || t('app.unknown_date')} variant="outlined" />
-                            {paper.doi && (
-                                <Link
-                                    href={`https://doi.org/${paper.doi}`}
-                                    target="_blank"
-                                    variant="caption"
-                                    sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    DOI: {paper.doi}
-                                </Link>
-                            )}
-                        </Box>
-
-                        <CollapsibleText
-                            text={abstractText}
-                            readerActive={readerActive}
-                            expandLabel={t('app.expand_text')}
-                            collapseLabel={t('app.collapse_text')}
-                            onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.abstract') || "Abstract")}
-                        />
-
-                        {/* Chinese abstract - independently collapsible */}
-                        {abstractCn && (
-                            <CollapsibleText
-                                text={abstractCn}
-                                isHighlighted
-                                readerActive={readerActive}
-                                expandLabel={t('app.expand_text')}
-                                collapseLabel={t('app.collapse_text')}
-                                onContextMenu={(e, txt) => handleContextMenuOpen(e, txt, paper, t('app.translated_abstract') || "Translated Abstract")}
-                            />
-                        )}
-                    </CardContent>
-
-                    <CardActions sx={{ flexWrap: 'wrap', gap: 1 }}>
-                        {/* PDF actions */}
-                        {hasPdfs ? (
-                            <>
-                                <Button
-                                    startIcon={<MenuBookIcon />}
-                                    size="small"
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => onReadPdf?.(paper, paper.pdfs[0])}
-                                >
-                                    {t('app.read_pdf')}
-                                </Button>
-
-                                {/* Always show management menu button if has PDFs */}
-                                <IconButton
-                                    size="small"
-                                    onClick={(e) => handleOpenPdfMenu(e, paper)}
-                                >
-                                    <MoreVertIcon fontSize="small" />
-                                </IconButton>
-
-                                {/* Always allow attaching more */}
-                                <Button
-                                    startIcon={<AttachFileIcon />}
-                                    size="small"
-                                    onClick={() => handleAttachPdf(paper)}
-                                    disabled={attachingIds.has(paper.id)}
-                                >
-                                    {t('app.attach_pdf')}
-                                </Button>
-                            </>
-                        ) : (
-                            <Button
-                                startIcon={<AttachFileIcon />}
-                                size="small"
-                                onClick={() => handleAttachPdf(paper)}
-                                disabled={attachingIds.has(paper.id)}
-                            >
-                                {t('app.attach_pdf')}
-                            </Button>
-                        )}
-
-                        <Tooltip title={t('app.open_external')}>
-                            <IconButton
-                                size="small"
-                                onClick={() => window.open(`https://doi.org/${paper.doi}`, '_blank')}
-                            >
-                                <OpenInNewIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Button
-                            startIcon={<TranslateIcon />}
-                            size="small"
-                            onClick={() => onTranslate(paper)}
-                        >
-                            {t('app.translate')}
-                        </Button>
-
-                        <Button
-                            startIcon={<RefreshIcon sx={{
-                                animation: updatingIds.has(paper.id) ? 'spin 1s linear infinite' : 'none',
-                                '@keyframes spin': {
-                                    '0%': { transform: 'rotate(0deg)' },
-                                    '100%': { transform: 'rotate(360deg)' }
-                                }
-                            }} />}
-                            size="small"
-                            onClick={() => handleUpdateClick(paper)}
-                            disabled={updatingIds.has(paper.id)}
-                        >
-                            {t('app.update_metadata')}
-                        </Button>
-                    </CardActions>
-                </Card>
-            </Box>
+            <PaperCardItem
+                paper={paper}
+                isSelected={selectedIds.has(paper.id)}
+                isUpdating={updatingIds.has(paper.id)}
+                isAttaching={attachingIds.has(paper.id)}
+                readerActive={readerActive}
+                t={t}
+                formatLocalTime={formatLocalTime}
+                onSelect={handleSelectPaper}
+                onContextMenu={handleContextMenuOpen}
+                onReadPdf={onReadPdf}
+                onOpenPdfMenu={handleOpenPdfMenu}
+                onAttachPdf={handleAttachPdf}
+                onTranslate={onTranslate}
+                onUpdateMetadata={handleUpdateClick}
+            />
         );
-    };
+    }, [selectedIds, updatingIds, attachingIds, readerActive, t, handleSelectPaper, handleContextMenuOpen, onReadPdf, handleOpenPdfMenu, handleAttachPdf, onTranslate, handleUpdateClick]);
 
     return (
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -593,87 +336,26 @@ const PaperList: React.FC<PaperListProps> = ({
                         color="text.secondary"
                         sx={{ ml: 2, display: 'inline-block' }}
                     >
-                        {`${batch.issueVolume} - ${batch.issueDate}`}
+                        {`${batch.issueVolume} - ${formatLocalTime(batch.issueDate)}`}
                     </Typography>
                 )}
             </Box>
 
-            {/* Batch Action Toolbar */}
-            <Fade in={selectedIds.size > 0}>
-                <AppBar position="absolute" color="default" sx={{
-                    top: 0, left: 0, right: 0,
-                    zIndex: 10,
-                    display: selectedIds.size > 0 ? 'flex' : 'none',
-                    bgcolor: 'background.paper',
-                    color: 'text.primary',
-                    boxShadow: 2
-                }}>
-                    <Toolbar variant="dense">
-                        <IconButton edge="start" color="inherit" onClick={() => setSelectedIds(new Set())}>
-                            <CloseIcon />
-                        </IconButton>
-                        <Typography sx={{ ml: 2, flex: 1 }} variant="subtitle1" component="div">
-                            {selectedIds.size} {t('app.selected') || "selected"}
-                        </Typography>
+            <BatchActionToolbar
+                selectedCount={selectedIds.size}
+                selectedGroupId={selectedGroupId}
+                t={t}
+                onClearSelection={() => setSelectedIds(new Set())}
+                onBatchTranslate={handleBatchTranslate}
+                onBatchUpdate={handleBatchUpdate}
+                onExportMenuOpen={(e) => setExportMenuAnchor(e.currentTarget)}
+                onGroupMenuOpen={(e) => setGroupMenuAnchor(e.currentTarget)}
+                onRemoveFromGroup={handleRemoveFromGroupClick}
+                exportMenuAnchor={exportMenuAnchor}
+                onExportMenuClose={() => setExportMenuAnchor(null)}
+                onExportReferences={handleExportReferences}
+            />
 
-                        <Button
-                            color="inherit"
-                            startIcon={<TranslateIcon />}
-                            onClick={handleBatchTranslate}
-                            sx={{ mr: 1 }}
-                        >
-                            {t('app.batch_translate') || "Translate"}
-                        </Button>
-
-                        <Button
-                            color="inherit"
-                            startIcon={<RefreshIcon />}
-                            onClick={handleBatchUpdate}
-                            sx={{ mr: 1 }}
-                        >
-                            {t('app.batch_update') || "Update"}
-                        </Button>
-
-                        <Button
-                            color="inherit"
-                            startIcon={<ContentCopyIcon />}
-                            onClick={(e) => setExportMenuAnchor(e.currentTarget)}
-                            sx={{ mr: 1 }}
-                        >
-                            {t('app.batch_export') || "Export"}
-                        </Button>
-
-                        <Menu
-                            anchorEl={exportMenuAnchor}
-                            open={Boolean(exportMenuAnchor)}
-                            onClose={() => setExportMenuAnchor(null)}
-                        >
-                            <MenuItem onClick={() => handleExportReferences('ris')}>
-                                {t('app.export_ris') || "Export RIS"}
-                            </MenuItem>
-                            <MenuItem onClick={() => handleExportReferences('bibtex')}>
-                                {t('app.export_bibtex') || "Export BibTeX"}
-                            </MenuItem>
-                        </Menu>
-
-                        {selectedGroupId ? (
-                            <Button color="error" startIcon={<FolderOffIcon />} onClick={handleRemoveFromGroupClick}>
-                                {t('app.remove_from_group') || "Remove"}
-                            </Button>
-                        ) : (
-                            <Button
-                                color="inherit"
-                                startIcon={<FolderIcon />}
-                                onClick={(e) => setGroupMenuAnchor(e.currentTarget)}
-                            >
-                                {t('app.add_to_group') || "Group"}
-                            </Button>
-                        )}
-                    </Toolbar>
-                </AppBar>
-            </Fade>
-
-            {/* Select All Checkbox - maybe put in header? */}
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
                 <Checkbox
                     checked={papers.length > 0 && selectedIds.size === papers.length}
@@ -689,7 +371,7 @@ const PaperList: React.FC<PaperListProps> = ({
                 <Box sx={{ flex: 1, overflowY: 'auto' }}>
                     {Object.entries(
                         papers.reduce((acc, paper) => {
-                            const date = paper.issueDate || "Unknown Date";
+                            const date = formatLocalTime(paper.issueDate) || "Unknown Date";
                             if (!acc[date]) acc[date] = [];
                             acc[date].push(paper);
                             return acc;
@@ -707,16 +389,33 @@ const PaperList: React.FC<PaperListProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     sx={{
-                                        bgcolor: 'action.hover',
+                                        bgcolor: 'background.paper',
                                         minHeight: 48,
                                         position: 'sticky',
                                         top: 0,
                                         zIndex: 1
                                     }}
                                 >
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                        {date} ({groupPapers.length})
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+                                        <Checkbox
+                                            size="small"
+                                            checked={groupPapers.every(p => selectedIds.has(p.id))}
+                                            indeterminate={groupPapers.some(p => selectedIds.has(p.id)) && !groupPapers.every(p => selectedIds.has(p.id))}
+                                            onChange={(e) => {
+                                                const newSelected = new Set(selectedIds);
+                                                const isChecked = e.target.checked;
+                                                groupPapers.forEach(p => {
+                                                    if (isChecked) newSelected.add(p.id);
+                                                    else newSelected.delete(p.id);
+                                                });
+                                                setSelectedIds(newSelected);
+                                            }}
+                                            sx={{ mr: 1, p: 0.5 }}
+                                        />
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                            {date} ({groupPapers.length})
+                                        </Typography>
+                                    </Box>
                                 </AccordionSummary>
                                 <AccordionDetails sx={{ p: 0 }}>
                                     {groupPapers.map((paper) => (
@@ -740,7 +439,6 @@ const PaperList: React.FC<PaperListProps> = ({
                 />
             )}
 
-            {/* PDF management menu (for papers with multiple PDFs) */}
             <Menu
                 anchorEl={pdfMenuAnchor}
                 open={Boolean(pdfMenuAnchor)}
@@ -768,7 +466,6 @@ const PaperList: React.FC<PaperListProps> = ({
                 ))}
             </Menu>
 
-            {/* Group Selection Menu */}
             <Menu
                 anchorEl={groupMenuAnchor}
                 open={Boolean(groupMenuAnchor)}
@@ -787,7 +484,6 @@ const PaperList: React.FC<PaperListProps> = ({
                 )}
             </Menu>
 
-            {/* AI Context Menu */}
             <Menu
                 open={contextMenuPos !== null}
                 onClose={() => setContextMenuPos(null)}
@@ -800,18 +496,52 @@ const PaperList: React.FC<PaperListProps> = ({
             >
                 <MenuItem onClick={() => handleContextAction('copy')}>
                     <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary={t('app.copy') || "Copy"} />
+                    <ListItemText>{t('app.copy') || "Copy"}</ListItemText>
                 </MenuItem>
-                <Divider />
                 <MenuItem onClick={() => handleContextAction('new')}>
                     <ListItemIcon><ChatIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary={t('app.chat_new_context') || "New Chat with Context"} />
+                    <ListItemText>{t('app.chat_new_context') || "New Chat with Context"}</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={() => handleContextAction('append')}>
                     <ListItemIcon><PlaylistAddIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary={t('app.chat_append_context') || "Add to Current Chat"} />
+                    <ListItemText>{t('app.chat_append_context') || "Append to Chat"}</ListItemText>
                 </MenuItem>
             </Menu>
+
+            <Dialog
+                open={exportDialogOpen}
+                onClose={() => setExportDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>{t('app.export_title') || "Export References"}</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            multiline
+                            fullWidth
+                            rows={15}
+                            value={exportContent}
+                            variant="outlined"
+                            InputProps={{
+                                readOnly: true,
+                                sx: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setExportDialogOpen(false)}>
+                        {t('app.close') || "Close"}
+                    </Button>
+                    <Button onClick={handleExportCopy} startIcon={<ContentCopyIcon />}>
+                        {t('app.export_copy') || "Copy"}
+                    </Button>
+                    <Button onClick={handleExportSave} variant="contained" startIcon={<FolderIcon />}>
+                        {t('app.export_file') || "Save as File"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
