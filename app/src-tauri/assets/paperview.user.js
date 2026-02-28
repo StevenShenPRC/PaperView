@@ -1,1 +1,1 @@
-D:/0x00000000/Develop/PaperView/BrowserScript/paperview.user.js
+../../../BrowserScript/paperview.user.js
