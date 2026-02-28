@@ -20,108 +20,6 @@ pub struct AppState {
     pub vec_extension_path: Option<String>,
 }
 
-// Helper to get proxy settings from the store
-pub(crate) fn get_proxy_config(app: &AppHandle) -> (String, Option<String>) {
-    let store = app.store("settings.json");
-    if let Ok(store) = store {
-        let mode = store.get("proxy_mode")
-            .and_then(|v| v.as_str().map(|s| s.to_string()))
-            .unwrap_or_else(|| "system".to_string());
-            
-        let url = store.get("proxy_url")
-            .and_then(|v| v.as_str().map(|s| s.to_string()));
-            
-        (mode, url)
-    } else {
-        ("system".to_string(), None)
-    }
-}
-
-// Helper to get active AI provider config
-// Returns: (base_url, api_key, provider_name, headers, default_model, embedding_model, embedding_dimensions, translation_prompt, translation_target_lang, translation_timeout, batch_translate_merge, batch_translate_size)
-pub(crate) fn get_ai_config(app: &AppHandle) -> Result<(String, String, String, Option<std::collections::HashMap<String, String>>, String, String, Option<u32>, Option<String>, String, Option<u64>, bool, usize), String> {
-    let store = app.store("settings.json").map_err(|e| e.to_string())?;
-
-    // Get translation settings
-    let translation_prompt = store.get("translation_prompt").and_then(|v| v.as_str().map(|s| s.to_string()));
-    
-    let target_lang_code = store.get("translation_target_lang").and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_else(|| "zh".to_string());
-    let translation_target_lang = match target_lang_code.as_str() {
-        "zh" => "Simplified Chinese",
-        "en" => "English",
-        "ja" => "Japanese",
-        "ko" => "Korean",
-        "fr" => "French",
-        "de" => "German",
-        "es" => "Spanish",
-        "ru" => "Russian",
-        "it" => "Italian",
-        _ => "Simplified Chinese",
-    }.to_string();
-
-    let translation_timeout = store.get("translation_timeout").and_then(|v| v.as_u64());
-    let batch_translate_merge = store.get("batch_translate_merge").and_then(|v| v.as_bool()).unwrap_or(false);
-    let batch_translate_size = store.get("batch_translate_size").and_then(|v| v.as_u64()).map(|v| v as usize).unwrap_or(5);
-
-    // 1. Get active provider name
-    let active_provider = store.get("active_ai_provider")
-        .and_then(|v| v.as_str().map(|s| s.to_string()));
-
-    if let Some(name) = active_provider {
-        // 2. Find provider in list
-        if let Some(providers_val) = store.get("ai_providers") {
-            if let Some(providers) = providers_val.as_array() {
-                for p in providers {
-                    if let Some(p_name) = p.get("name").and_then(|v| v.as_str()) {
-                        if p_name == name {
-                            // Found match
-                            let base_url = p.get("base_url").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                            let api_key = p.get("api_key").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                            
-                            // Get default model or first in list
-                            let mut model = "".to_string();
-                            if let Some(m) = p.get("default_model").and_then(|v| v.as_str()) {
-                                model = m.to_string();
-                            } else if let Some(models) = p.get("models").and_then(|v| v.as_array()) {
-                                if let Some(first) = models.first().and_then(|v| v.as_str()) {
-                                    model = first.to_string();
-                                }
-                            }
-                             
-                             let headers_val = p.get("additional_headers");
-                             let mut headers = None;
-                             if let Some(h_obj) = headers_val.and_then(|v| v.as_object()) {
-                                 let mut map = std::collections::HashMap::new();
-                                 for (k, v) in h_obj {
-                                     if let Some(v_str) = v.as_str() {
-                                         map.insert(k.to_string(), v_str.to_string());
-                                     }
-                                 }
-                                 headers = Some(map);
-                             }
-                             
-                             // Get embedding model
-                             let embedding_model = p.get("embedding_model")
-                                 .and_then(|v| v.as_str())
-                                 .unwrap_or("text-embedding-3-small") // Default fallback
-                                 .to_string();
-                             
-                             let embedding_dimensions = p.get("embedding_dimensions")
-                                 .and_then(|v| v.as_u64())
-                                 .map(|v| v as u32);
-
-                            return Ok((base_url, api_key, name, headers, model, embedding_model, embedding_dimensions, translation_prompt, translation_target_lang, translation_timeout, batch_translate_merge, batch_translate_size)); // Return all
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    println!("get_ai_config failed: No active AI provider configured or found");
-    Err("No active AI provider configured".to_string())
-}
-
 // Global helper for history db
 pub(crate) fn get_history_db_conn(app: &AppHandle, state: &State<'_, AppState>) -> Result<Connection, String> {
     let history_db_path = app.path().resolve("history.db", BaseDirectory::AppData).map_err(|e| e.to_string())?;
@@ -130,10 +28,10 @@ pub(crate) fn get_history_db_conn(app: &AppHandle, state: &State<'_, AppState>) 
     let ext_path_abs = resolve_vec_path(app, ext_res_path.as_deref());
 
     // Get dimensions from config
-    let (_, _, _, _, _, _, embedding_dimensions, _, _, _, _, _) = get_ai_config(app).unwrap_or((
-        "".into(), "".into(), "".into(), None, "".into(), "".into(), Some(1536), None, "".into(), None, false, 5
-    ));
-    let dims = embedding_dimensions.unwrap_or(1536);
+    let dims = match crate::config::get_embedding_config(app) {
+        Ok((_, d)) => d,
+        Err(_) => 1536,
+    };
 
     db::init_history_db(&history_db_str, ext_path_abs.as_deref(), dims).map_err(|e| e.to_string())
 }
@@ -237,6 +135,7 @@ fn main() {
             commands::ai::chat_command,
             commands::ai::generate_chat_title_command,
             commands::ai::fetch_models_command,
+            commands::ai::get_model_database,
 
             commands::pdf::attach_pdf,
             commands::pdf::read_pdf,

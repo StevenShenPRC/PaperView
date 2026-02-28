@@ -1,6 +1,6 @@
 [package]
 name = "paperview"
-version = "0.2.0"
+version = "0.2.1"
 description = "PaperView - AI-powered Paper Manager"
 authors = ["you"]
 edition = "2021"

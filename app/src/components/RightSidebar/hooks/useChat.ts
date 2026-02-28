@@ -2,7 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import store from '../../../store';
-import { ChatMessage, ChatSession, PendingContext, ContextItem } from '../../../types';
+import { ChatMessage, ChatSession, PendingContext, ContextItem, ModelMetadata } from '../../../types';
+
+export interface ChatModelOption {
+    provider: string;
+    model: ModelMetadata;
+}
 
 export function useChat(t: any, onContextHandled?: () => void) {
     const [input, setInput] = useState('');
@@ -18,8 +23,9 @@ export function useChat(t: any, onContextHandled?: () => void) {
     const streamingContentRef = useRef<string>("");
 
     const [selectedModel, setSelectedModel] = useState('');
+    const [selectedProvider, setSelectedProvider] = useState('');
     const [defaultModel, setDefaultModel] = useState('gpt-3.5-turbo');
-    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [availableModels, setAvailableModels] = useState<ChatModelOption[]>([]);
     const [activeProviderName, setActiveProviderName] = useState<string | null>(null);
 
     useEffect(() => {
@@ -29,24 +35,49 @@ export function useChat(t: any, onContextHandled?: () => void) {
     const loadProviderSettings = useCallback(async () => {
         try {
             let defaultModelToUse = 'gpt-3.5-turbo';
-            const active = await store.get<string>('active_ai_provider');
+            let defaultProviderToUse = '';
             const providers = await store.get<any[]>('ai_providers');
 
-            setActiveProviderName(active || null);
-
-            let models: string[] = [];
-            if (active && providers) {
-                const provider = providers.find((p: any) => p.name === active);
-                if (provider) {
-                    models = provider.models || [];
-                    if (provider.default_model) {
-                        defaultModelToUse = provider.default_model;
-                    } else if (models.length > 0) {
-                        defaultModelToUse = models[0];
+            // 1. Try to use decoupled ModelRouting (new system)
+            const chatRouting = await store.get<{ provider: string, model_id: string }>('default_chat_model');
+            if (chatRouting && chatRouting.provider && chatRouting.model_id) {
+                defaultProviderToUse = chatRouting.provider;
+                defaultModelToUse = chatRouting.model_id;
+            } else {
+                // 2. Fallback to active_ai_provider (legacy)
+                const active = await store.get<string>('active_ai_provider');
+                if (active) defaultProviderToUse = active;
+                // Find first chat model from active provider
+                if (defaultProviderToUse && providers) {
+                    const activeProv = providers.find((p: any) => p.name === defaultProviderToUse);
+                    if (activeProv) {
+                        const firstChat = (activeProv.models || []).find((m: any) => {
+                            const meta = typeof m === 'string' ? { type: 'unknown' } : m;
+                            return meta.type === 'chat' || meta.type === 'unknown';
+                        });
+                        if (firstChat) {
+                            defaultModelToUse = typeof firstChat === 'string' ? firstChat : firstChat.id;
+                        }
                     }
                 }
             }
-            setAvailableModels(models);
+
+            setActiveProviderName(defaultProviderToUse || null);
+
+            // Collect chat-eligible models from ALL providers
+            const options: ChatModelOption[] = [];
+            if (providers) {
+                providers.forEach((p: any) => {
+                    (p.models || []).forEach((m: any) => {
+                        const meta: ModelMetadata = typeof m === 'string' ? { id: m, type: 'unknown' as const } : m;
+                        if (meta.type === 'chat' || meta.type === 'unknown') {
+                            options.push({ provider: p.name, model: meta });
+                        }
+                    });
+                });
+            }
+
+            setAvailableModels(options);
             setDefaultModel(defaultModelToUse);
             return defaultModelToUse;
         } catch (err) {
@@ -60,7 +91,8 @@ export function useChat(t: any, onContextHandled?: () => void) {
         const setupListeners = async () => {
             const u1 = await store.onKeyChange('active_ai_provider', async () => loadProviderSettings());
             const u2 = await store.onKeyChange('ai_providers', async () => loadProviderSettings());
-            unlistenFn = () => { u1(); u2(); };
+            const u3 = await store.onKeyChange('default_chat_model', async () => loadProviderSettings());
+            unlistenFn = () => { u1(); u2(); u3(); };
         };
         setupListeners();
         return () => { if (unlistenFn) unlistenFn(); };
@@ -188,13 +220,20 @@ export function useChat(t: any, onContextHandled?: () => void) {
         } catch (err) { console.error("Failed to delete", err); }
     }, [currentSessionId]);
 
-    const updateCurrentSessionModel = useCallback(async (model: string) => {
+    const updateCurrentSessionModel = useCallback(async (providerName: string, model: string) => {
         setSelectedModel(model);
+        setSelectedProvider(providerName);
         if (currentSessionId) {
             await invoke('update_chat_session', { id: currentSessionId, model });
             setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, model } : s));
         }
-    }, [currentSessionId]);
+        // Also update active_ai_provider in store when user picks a model from a different provider
+        if (providerName && providerName !== activeProviderName) {
+            await store.set('active_ai_provider', providerName);
+            await store.save();
+            setActiveProviderName(providerName);
+        }
+    }, [currentSessionId, activeProviderName]);
 
     useEffect(() => {
         let unlistenHandlers: UnlistenFn[] = [];
@@ -250,8 +289,9 @@ export function useChat(t: any, onContextHandled?: () => void) {
                                 const providers = await store.get<any[]>('ai_providers');
                                 if (providerName && providers) {
                                     const provider = providers.find((p: any) => p.name === providerName);
-                                    if (provider) {
-                                        titleModel = provider.default_model || (provider.models && provider.models[0]) || titleModel;
+                                    if (provider && provider.models && provider.models.length > 0) {
+                                        const firstModel = provider.models[0];
+                                        titleModel = typeof firstModel === 'string' ? firstModel : firstModel.id;
                                     }
                                 }
                                 let finalTitle = "";
@@ -327,7 +367,7 @@ export function useChat(t: any, onContextHandled?: () => void) {
         });
 
         try {
-            let providerToUse = activeProviderName || await store.get<string>('active_ai_provider') || "";
+            let providerToUse = selectedProvider || activeProviderName || await store.get<string>('active_ai_provider') || "";
             let modelToUse = selectedModel || "gpt-3.5-turbo";
             await invoke('chat_command', { messages: contextMessages, model: modelToUse, providerName: providerToUse });
         } catch (error) {

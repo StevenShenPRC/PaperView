@@ -1,6 +1,7 @@
 use serde::Serialize;
 use tauri::{AppHandle, State, path::BaseDirectory, Manager};
-use crate::{db, ai, AppState, get_history_db_conn, get_ai_config, get_proxy_config, resolve_vec_path};
+use crate::{db, ai, AppState, get_history_db_conn, resolve_vec_path};
+use crate::config::{get_embedding_config, get_proxy_config};
 
 #[derive(Serialize)]
 pub struct HistorySearchResults {
@@ -78,8 +79,13 @@ pub async fn create_chat_message(
         if !text_content.is_empty() {
             // We need AI config to generate embedding
             // Re-use get_ai_config helper
-            if let Ok((base_url, api_key, _, headers, _, embedding_model, embedding_dimensions, _, _, _, _, _)) = get_ai_config(&app) {
+            if let Ok((resolved, dims)) = get_embedding_config(&app) {
                  let (proxy_mode, proxy_url) = get_proxy_config(&app);
+                 let base_url = resolved.base_url;
+                 let api_key = resolved.api_key;
+                 let embedding_model = resolved.model;
+                 let headers = resolved.headers;
+                 let embedding_dimensions = Some(dims);
                  
                  let history_db_2 = history_db_str.clone();
                  // Pass resolved path
@@ -87,14 +93,11 @@ pub async fn create_chat_message(
                  
                  let app_clone = app.clone(); // Clone app for use in the spawned task
                  tauri::async_runtime::spawn(async move {
-                     match ai::get_embeddings(base_url, api_key, embedding_model.to_string(), text_content, proxy_mode, proxy_url, headers, embedding_dimensions, None).await {
+                     match ai::get_embeddings(base_url, api_key, embedding_model, text_content, proxy_mode, proxy_url, headers, embedding_dimensions, None).await {
                          Ok(embedding) => {
-                               let _ = tokio::task::spawn_blocking(move || {
+                                let _ = tokio::task::spawn_blocking(move || {
                                 // Re-fetch dimensions for background init too
-                                let (_, _, _, _, _, _, embedding_dimensions, _, _, _, _, _) = get_ai_config(&app_clone).unwrap_or((
-                                    "".into(), "".into(), "".into(), None, "".into(), "".into(), Some(1536), None, "".into(), None, false, 5
-                                ));
-                                let dims = embedding_dimensions.unwrap_or(1536);
+                                let dims = crate::config::get_embedding_config(&app_clone).map(|(_, d)| d).unwrap_or(1536);
 
                                 if let Ok(conn) = db::init_history_db(&history_db_2, ext_path_2.as_deref(), dims) {
                                     let _ = db::insert_message_embedding(&conn, msg_id, &embedding);
@@ -118,18 +121,18 @@ pub async fn search_history(
     query: String
 ) -> Result<HistorySearchResults, String> {
     // 1. Get Embedding for query (for RAG)
-    let (base_url, api_key, _, headers, _, embedding_model, embedding_dimensions, _, _, _, _, _) = get_ai_config(&app).map_err(|_| "AI Config not found")?;
+    let (resolved, dims) = get_embedding_config(&app).map_err(|_| "AI Config not found")?;
     let (proxy_mode, proxy_url) = get_proxy_config(&app);
     
     let embedding = ai::get_embeddings(
-        base_url, 
-        api_key, 
-        embedding_model, 
+        resolved.base_url, 
+        resolved.api_key, 
+        resolved.model, 
         query.clone(), 
         proxy_mode, 
         proxy_url, 
-        headers, 
-        embedding_dimensions,
+        resolved.headers, 
+        Some(dims),
         None
     )
         .await

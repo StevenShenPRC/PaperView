@@ -1,520 +1,247 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    Box, Typography, List, ListItem, ListItemText, ListItemSecondaryAction,
-    IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-    TextField, Switch, FormControl, InputLabel, Select, MenuItem, Chip, Tooltip, CircularProgress, Divider,
-    Accordion, AccordionSummary, AccordionDetails
+    Box, Typography, Switch, FormControl, InputLabel, Select, MenuItem, Divider,
+    Card, CardContent, Grid, TextField
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import WarningIcon from '@mui/icons-material/Warning';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
-import { AiProvider, AppSettings } from '../../types';
+import { AppSettings, ModelMetadata, ModelRouting } from '../../types';
 import { invoke } from '@tauri-apps/api/core';
-import { useDialog } from '../../context/DialogContext';
+import ProviderManager from './ProviderManager';
 
 interface AiSettingsProps {
     settings: AppSettings;
     onChange: (settings: AppSettings) => void;
 }
 
-const PRESETS = [
-    { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-3.5-turbo'] },
-    { name: 'DeepSeek (深度求索)', baseUrl: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-coder'] },
-    { name: 'Moonshot (Kimi)', baseUrl: 'https://api.moonshot.cn/v1', models: ['moonshot-v1-8k', 'moonshot-v1-32k'] },
-    { name: 'Qwen (通义千问)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen-plus', 'qwen-max'] },
-    { name: 'SiliconFlow (硅基流动)', baseUrl: 'https://api.siliconflow.cn/v1', models: ['Qwen/Qwen2.5-7B-Instruct', 'THUDM/glm-4-9b-chat'] },
-    { name: 'Ollama (Local)', baseUrl: 'http://localhost:11434/v1', models: ['llama3', 'mistral'] }
-];
-
-const AiSettings: React.FC<AiSettingsProps> = ({
-    settings,
-    onChange
-}) => {
-    const { providers, activeProvider } = {
-        providers: settings.ai_providers,
-        activeProvider: settings.active_ai_provider || null
-    };
-
-    const updateProviders = (newProviders: AiProvider[]) => {
-        onChange({ ...settings, ai_providers: newProviders });
-    };
-
-    const updateActive = (name: string | null) => {
-        onChange({ ...settings, active_ai_provider: name || undefined });
-    };
+export default function AiSettings({ settings, onChange }: AiSettingsProps) {
     const { t } = useTranslation();
-    const dialog = useDialog();
-    const [openDialog, setOpenDialog] = useState(false);
-    const [editingProvider, setEditingProvider] = useState<AiProvider | null>(null);
 
-    // Dialog State
-    const [name, setName] = useState('');
-    const [baseUrl, setBaseUrl] = useState('');
-    const [apiKey, setApiKey] = useState('');
+    // Data State
+    const [modelDb, setModelDb] = useState<Record<string, any>>({});
 
-    // Models State
-    const [modelsList, setModelsList] = useState<string[]>([]);
-    const [defaultModel, setDefaultModel] = useState('');
-    const [embeddingModel, setEmbeddingModel] = useState('');
-    const [embeddingDimensions, setEmbeddingDimensions] = useState<number | ''>(1536);
+    useEffect(() => {
+        invoke<Record<string, any>>('get_model_database').then(db => {
+            if (db) setModelDb(db);
+        }).catch(err => console.error("Failed to load model db", err));
+    }, []);
 
-    const [headers, setHeaders] = useState(''); // JSON string
-    const [isFetchingModels, setIsFetchingModels] = useState(false);
+    const providers = settings.ai_providers || [];
 
-    // Custom Model Dialog
-    const [openModelDialog, setOpenModelDialog] = useState(false);
-    const [newModelName, setNewModelName] = useState('');
-
-    const handleOpenDialog = (provider?: AiProvider) => {
-        if (provider) {
-            setEditingProvider(provider);
-            setName(provider.name);
-            setBaseUrl(provider.base_url);
-            setApiKey(provider.api_key);
-            setModelsList(provider.models);
-            setDefaultModel(provider.default_model || provider.models[0] || '');
-            setEmbeddingModel(provider.embedding_model || '');
-            setEmbeddingDimensions(provider.embedding_dimensions || 1536);
-            setHeaders(provider.additional_headers ? JSON.stringify(provider.additional_headers, null, 2) : '');
-        } else {
-            setEditingProvider(null);
-            setName('');
-            setBaseUrl('');
-            setApiKey('');
-            setModelsList([]);
-            setDefaultModel('');
-            setEmbeddingModel('');
-            setEmbeddingDimensions(1536);
-            setHeaders('');
-        }
-        setOpenDialog(true);
-    };
-
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
-    };
-
-    const handleSave = () => {
-        let parsedHeaders = undefined;
-        if (headers.trim()) {
-            try {
-                parsedHeaders = JSON.parse(headers);
-            } catch (e) {
-                dialog.alert(t('settings.invalid_json_headers'));
-                return;
-            }
-        }
-
-        const newProvider: AiProvider = {
-            name: name.trim(),
-            base_url: baseUrl.trim(),
-            api_key: apiKey.trim(),
-            models: modelsList,
-            default_model: defaultModel,
-            embedding_model: embeddingModel,
-            embedding_dimensions: typeof embeddingDimensions === 'number' ? embeddingDimensions : undefined,
-            additional_headers: parsedHeaders
-        };
-
-        if (editingProvider) {
-            // Update existing
-            const index = providers.findIndex(p => p.name === editingProvider.name);
-            const newProviders = [...providers];
-            if (index !== -1) {
-                newProviders[index] = newProvider;
-                // If we renamed the active provider, update active
-                if (activeProvider === editingProvider.name && name !== editingProvider.name) {
-                    updateActive(newProvider.name);
+    // Component for Global Model Routing Select
+    const ModelRoutingSelect = ({
+        label,
+        value,
+        onChangeValue,
+        targetType
+    }: {
+        label: string,
+        value?: ModelRouting,
+        onChangeValue: (route: ModelRouting) => void,
+        targetType?: 'chat' | 'embedding'
+    }) => {
+        const typedModels: { provider: string, model: ModelMetadata }[] = [];
+        const unknownModels: { provider: string, model: ModelMetadata }[] = [];
+        providers.forEach(p => {
+            p.models.forEach(m => {
+                if (!targetType || m.type === targetType || m.type === 'unknown') {
+                    if (m.type === 'unknown') unknownModels.push({ provider: p.name, model: m });
+                    else typedModels.push({ provider: p.name, model: m });
                 }
-            }
-            updateProviders(newProviders);
-        } else {
-            // Add new
-            if (providers.some(p => p.name === newProvider.name)) {
-                dialog.alert(t('settings.provider_exists'));
-                return;
-            }
-            updateProviders([...providers, newProvider]);
-        }
-        handleCloseDialog();
-    };
-
-    const handleDelete = async (providerName: string) => {
-        const confirmed = await dialog.confirm(t('settings.confirm_delete_provider'));
-        if (confirmed) {
-            const newProviders = providers.filter(p => p.name !== providerName);
-            updateProviders(newProviders);
-            if (activeProvider === providerName) {
-                updateActive(null);
-            }
-        }
-    };
-
-    const handlePresetSelect = (presetName: string) => {
-        const preset = PRESETS.find(p => p.name === presetName);
-        if (preset) {
-            if (!name) setName(preset.name.split(' ')[0]);
-            setBaseUrl(preset.baseUrl);
-            setModelsList(preset.models);
-            if (preset.models.length > 0) setDefaultModel(preset.models[0]);
-        }
-    };
-
-    const handleFetchModels = async () => {
-        if (!baseUrl) {
-            dialog.alert(t('settings.fill_basepath_apikey_first'));
-            return;
-        }
-
-        setIsFetchingModels(true);
-        try {
-            let parsedHeaders = undefined;
-            if (headers.trim()) {
-                try { parsedHeaders = JSON.parse(headers); } catch (e) { }
-            }
-
-            const fetchedModels = await invoke<string[]>('fetch_models_command', {
-                baseUrl: baseUrl.trim(),
-                apiKey: apiKey.trim(),
-                additionalHeaders: parsedHeaders
             });
+        });
 
-            if (fetchedModels && fetchedModels.length > 0) {
-                setModelsList(fetchedModels);
-                // If current default is not in list, set to first fetched
-                if (!fetchedModels.includes(defaultModel)) {
-                    setDefaultModel(fetchedModels[0]);
-                }
-            } else {
-                dialog.alert(t('settings.no_models_found'));
-            }
-        } catch (error) {
-            console.error(error);
-            dialog.alert(`${t('settings.fetch_failed')}: ${error}`);
-        } finally {
-            setIsFetchingModels(false);
-        }
-    };
+        const currentValue = value ? `${value.provider}::${value.model_id}` : '';
 
-    const handleAddCustomModel = () => {
-        const trimmed = newModelName.trim();
-        if (trimmed) {
-            if (!modelsList.includes(trimmed)) {
-                const newList = [...modelsList, trimmed];
-                setModelsList(newList);
-            }
-            setDefaultModel(trimmed);
-            setNewModelName('');
-            setOpenModelDialog(false);
-        }
+        const renderItem = (item: { provider: string, model: ModelMetadata }) => (
+            <MenuItem key={`${item.provider}::${item.model.id}`} value={`${item.provider}::${item.model.id}`}>
+                {item.provider} — {item.model.display_name || item.model.id}
+                {item.model.type !== 'unknown' && ` (${item.model.type})`}
+            </MenuItem>
+        );
+
+        return (
+            <FormControl fullWidth size="small">
+                <InputLabel>{label}</InputLabel>
+                <Select
+                    label={label}
+                    value={currentValue}
+                    onChange={(e) => {
+                        const val = e.target.value as string;
+                        if (!val) return;
+                        const sep = val.indexOf('::');
+                        onChangeValue({ provider: val.slice(0, sep), model_id: val.slice(sep + 2) });
+                    }}
+                >
+                    {typedModels.map(renderItem)}
+                    {unknownModels.length > 0 && typedModels.length > 0 && <Divider sx={{ my: 0.5 }} />}
+                    {unknownModels.length > 0 && (
+                        <MenuItem disabled sx={{ fontSize: '0.75rem', color: 'text.secondary', py: 0.5 }}>
+                            — {t('settings.unclassified_models') || 'Unclassified'} —
+                        </MenuItem>
+                    )}
+                    {unknownModels.map(renderItem)}
+                    {typedModels.length === 0 && unknownModels.length === 0 && <MenuItem disabled>No configured models available</MenuItem>}
+                </Select>
+            </FormControl>
+        );
     };
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">{t('settings.ai_providers')}</Typography>
-                <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenDialog()}>
-                    {t('common.add')}
-                </Button>
-            </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
 
-            <List>
-                {providers.map((provider) => (
-                    <ListItem key={provider.name} divider>
-                        <ListItemText
-                            primary={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {provider.name}
-                                    {activeProvider === provider.name && (
-                                        <Chip label={t('common.active')} color="primary" size="small" />
-                                    )}
-                                </Box>
-                            }
-                            secondary={`${provider.base_url} - ${provider.default_model || (provider.models.length > 0 ? provider.models[0] : (t('settings.no_model') || 'No model'))}`}
-                        />
-                        <ListItemSecondaryAction>
-                            <Switch
-                                edge="end"
-                                checked={activeProvider === provider.name}
-                                onChange={() => updateActive(provider.name)}
-                                sx={{ mr: 2 }}
+            {/* Global AI Routing */}
+            <Card variant="outlined">
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                    <Typography variant="h6" gutterBottom>{t('settings.global_model_routing') || "Global Model Routing"}</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+                        {t('settings.global_routing_desc') || "Select the default models to use for different features across all configured providers."}
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <ModelRoutingSelect
+                                label={t('settings.default_chat_model') || "Default Chat Model"}
+                                value={settings.default_chat_model}
+                                targetType="chat"
+                                onChangeValue={(val) => onChange({ ...settings, default_chat_model: val, active_ai_provider: val.provider })}
                             />
-                            <IconButton edge="end" onClick={() => handleOpenDialog(provider)}>
-                                <EditIcon />
-                            </IconButton>
-                            <IconButton edge="end" onClick={() => handleDelete(provider.name)}>
-                                <DeleteIcon />
-                            </IconButton>
-                        </ListItemSecondaryAction>
-                    </ListItem>
-                ))}
-            </List>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <ModelRoutingSelect
+                                label={t('settings.default_translate_model') || "Default Translate Model"}
+                                value={settings.default_translate_model}
+                                targetType="chat"
+                                onChangeValue={(val) => onChange({ ...settings, default_translate_model: val })}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <ModelRoutingSelect
+                                label={t('settings.default_embedding_model') || "Default Embedding Model"}
+                                value={settings.default_embedding_model}
+                                targetType="embedding"
+                                onChangeValue={(val) => onChange({ ...settings, default_embedding_model: val })}
+                            />
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
 
-            <Box sx={{ mt: 4, mb: 2 }}>
-                <Typography variant="h6" gutterBottom>{t('settings.translation_settings') || "Translation Settings"}</Typography>
-                <Divider sx={{ mb: 2 }} />
+            {/* Provider Manager Extracted Component */}
+            <ProviderManager
+                providers={providers}
+                onChange={(newProviders) => onChange({ ...settings, ai_providers: newProviders })}
+                modelDb={modelDb}
+            />
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <FormControl fullWidth size="small">
-                        <InputLabel>{t('settings.translation_target_lang') || "Target Language"}</InputLabel>
-                        <Select
-                            label={t('settings.translation_target_lang') || "Target Language"}
-                            value={settings.translation_target_lang || 'zh'}
-                            onChange={(e) => onChange({ ...settings, translation_target_lang: e.target.value })}
-                        >
-                            <MenuItem value="zh">简体中文 (Simplified Chinese)</MenuItem>
-                            <MenuItem value="en">English</MenuItem>
-                            <MenuItem value="ja">日本語 (Japanese)</MenuItem>
-                            <MenuItem value="ko">한국어 (Korean)</MenuItem>
-                            <MenuItem value="fr">Français (French)</MenuItem>
-                            <MenuItem value="de">Deutsch (German)</MenuItem>
-                            <MenuItem value="es">Español (Spanish)</MenuItem>
-                            <MenuItem value="ru">Русский (Russian)</MenuItem>
-                            <MenuItem value="it">Italiano (Italian)</MenuItem>
-                        </Select>
-                    </FormControl>
+            {/* Global Translation Settings Section */}
+            <Card variant="outlined" sx={{ overflow: 'visible' }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                    <Typography variant="h6" gutterBottom>{t('settings.translation_settings') || "Translation Settings"}</Typography>
+                    <Divider sx={{ mb: 3 }} />
 
-                    <TextField
-                        label={t('settings.translation_prompt') || "Custom Translation Prompt"}
-                        value={settings.translation_prompt || ''}
-                        onChange={(e) => onChange({ ...settings, translation_prompt: e.target.value })}
-                        fullWidth
-                        multiline
-                        rows={4}
-                        placeholder={"Translate the following academic paper title and abstract into {{lang}}.\nReturn JSON format: { \"title_cn\": \"...\", \"abstract_cn\": \"...\" }."}
-                        helperText={t('settings.translation_prompt_hint') || "Use {{lang}} to dynamically inject the Target Language. Leave empty to use default. It MUST ask for JSON format with title_cn and abstract_cn keys."}
-                    />
-
-                    <TextField
-                        label={t('settings.translation_timeout') || "Translation Timeout (seconds)"}
-                        value={settings.translation_timeout || 120}
-                        onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            onChange({ ...settings, translation_timeout: isNaN(val) ? 120 : val });
-                        }}
-                        type="number"
-                        fullWidth
-                        size="small"
-                        helperText={t('settings.translation_timeout_hint') || "Increase if you get 'operation timed out' errors on large abstracts."}
-                        sx={(theme) => ({
-                            '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
-                                filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
-                                opacity: 1,
-                            }
-                        })}
-                    />
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
-                        <Box>
-                            <Typography variant="subtitle1">{t('settings.batch_translate_merge') || "Merge Batch Translation Requests"}</Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                {t('settings.batch_translate_merge_desc') || "Combines multiple papers into a single AI request to save API calls."}
-                            </Typography>
-                        </Box>
-                        <Switch
-                            checked={settings.batch_translate_merge || false}
-                            onChange={(e) => onChange({ ...settings, batch_translate_merge: e.target.checked })}
-                        />
-                    </Box>
-
-                    {settings.batch_translate_merge && (
-                        <TextField
-                            label={t('settings.batch_translate_size') || "Merge Batch Size"}
-                            value={settings.batch_translate_size || 5}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                onChange({ ...settings, batch_translate_size: isNaN(val) ? 5 : val });
-                            }}
-                            type="number"
-                            fullWidth
-                            size="small"
-                            helperText={t('settings.batch_translate_size_hint') || "How many papers to translate in one API call. Too many might exceed token limits or reduce quality."}
-                            sx={(theme) => ({
-                                '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
-                                    filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
-                                    opacity: 1,
-                                }
-                            })}
-                        />
-                    )}
-                </Box>
-            </Box>
-
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>{editingProvider ? t('settings.edit_provider') : t('settings.add_provider')}</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        {!editingProvider && (
+                    <Grid container spacing={3}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>{t('settings.load_preset')}</InputLabel>
+                                <InputLabel>{t('settings.translation_target_lang') || "Target Language"}</InputLabel>
                                 <Select
-                                    label={t('settings.load_preset')}
-                                    onChange={(e) => handlePresetSelect(e.target.value)}
-                                    defaultValue=""
+                                    label={t('settings.translation_target_lang') || "Target Language"}
+                                    value={settings.translation_target_lang || 'zh'}
+                                    onChange={(e) => onChange({ ...settings, translation_target_lang: e.target.value })}
                                 >
-                                    <MenuItem value="" disabled>{t('settings.select_preset')}</MenuItem>
-                                    {PRESETS.map(p => (
-                                        <MenuItem key={p.name} value={p.name}>{p.name}</MenuItem>
-                                    ))}
+                                    <MenuItem value="zh">简体中文 (Simplified Chinese)</MenuItem>
+                                    <MenuItem value="en">English</MenuItem>
+                                    <MenuItem value="ja">日本語 (Japanese)</MenuItem>
+                                    <MenuItem value="ko">한국어 (Korean)</MenuItem>
+                                    <MenuItem value="fr">Français (French)</MenuItem>
+                                    <MenuItem value="de">Deutsch (German)</MenuItem>
+                                    <MenuItem value="es">Español (Spanish)</MenuItem>
+                                    <MenuItem value="ru">Русский (Russian)</MenuItem>
+                                    <MenuItem value="it">Italiano (Italian)</MenuItem>
                                 </Select>
                             </FormControl>
-                        )}
+                        </Grid>
 
-                        <TextField
-                            label={t('settings.provider_name')}
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            fullWidth
-                            size="small"
-                        />
-                        <TextField
-                            label={t('settings.base_url')}
-                            value={baseUrl}
-                            onChange={(e) => setBaseUrl(e.target.value)}
-                            fullWidth
-                            size="small"
-                            placeholder="https://api.openai.com/v1"
-                        />
-                        <TextField
-                            label={t('settings.api_key')}
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            fullWidth
-                            size="small"
-                            type="password"
-                            helperText={t('settings.api_key_optional')}
-                        />
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                label={t('settings.translation_timeout') || "Translation Timeout (seconds)"}
+                                value={settings.translation_timeout || 120}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    onChange({ ...settings, translation_timeout: isNaN(val) ? 120 : val });
+                                }}
+                                type="number"
+                                fullWidth
+                                size="small"
+                                helperText={t('settings.translation_timeout_hint') || "Increase if you get timeout errors on large abstracts."}
+                                sx={(theme) => ({
+                                    '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                        filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                        opacity: 1,
+                                    }
+                                })}
+                            />
+                        </Grid>
 
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>{t('settings.models')}</InputLabel>
-                                <Select
-                                    label={t('settings.models')}
-                                    value={defaultModel}
-                                    onChange={(e) => {
-                                        if (e.target.value === '___add_custom___') {
-                                            setOpenModelDialog(true);
-                                        } else {
-                                            setDefaultModel(e.target.value);
-                                        }
-                                    }}
-                                    renderValue={(selected) => selected}
-                                >
-                                    {modelsList.map((m) => (
-                                        <MenuItem key={m} value={m}>{m}</MenuItem>
-                                    ))}
-                                    <Divider />
-                                    <MenuItem value="___add_custom___">
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
-                                            <AddIcon fontSize="small" />
-                                            {t('settings.add_custom_model')}
-                                        </Box>
-                                    </MenuItem>
-                                </Select>
-                            </FormControl>
-                            <Tooltip title={t('settings.fetch_models_tooltip')}>
-                                <span>
-                                    <IconButton onClick={handleFetchModels} disabled={isFetchingModels || !baseUrl}>
-                                        {isFetchingModels ? <CircularProgress size={24} /> : <RefreshIcon />}
-                                    </IconButton>
-                                </span>
-                            </Tooltip>
-                        </Box>
+                        <Grid size={{ xs: 12 }}>
+                            <TextField
+                                label={t('settings.translation_prompt') || "Custom Translation Prompt"}
+                                value={settings.translation_prompt || ''}
+                                onChange={(e) => onChange({ ...settings, translation_prompt: e.target.value })}
+                                fullWidth
+                                multiline
+                                rows={3}
+                                placeholder={"Translate the following academic paper title and abstract into {{lang}}.\nReturn JSON format: { \"title_cn\": \"...\", \"abstract_cn\": \"...\" }."}
+                                helperText={t('settings.translation_prompt_hint') || "Use {{lang}} to inject Target Language. Must ask for JSON format with title_cn and abstract_cn keys."}
+                            />
+                        </Grid>
 
-                        <FormControl fullWidth size="small">
-                            <InputLabel>{t('settings.embedding_model') || 'Embedding Model'}</InputLabel>
-                            <Select
-                                label={t('settings.embedding_model') || 'Embedding Model'}
-                                value={embeddingModel}
-                                onChange={(e) => setEmbeddingModel(e.target.value)}
-                            >
-                                <MenuItem value=""><em>None</em></MenuItem>
-                                {modelsList.map((m) => (
-                                    <MenuItem key={m} value={m}>{m}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <Grid size={{ xs: 12 }}>
+                            <Divider sx={{ my: 1 }} />
+                        </Grid>
 
-                        <TextField
-                            label={t('settings.embedding_dimensions') || 'Embedding Dimensions'}
-                            value={embeddingDimensions}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                setEmbeddingDimensions(isNaN(val) ? '' : val);
-                            }}
-                            fullWidth
-                            size="small"
-                            type="number"
-                            helperText={t('settings.dimensions_hint') || "Standard is 1536. Only needed if the model supports custom dimensions (v3 models)."}
-                            sx={(theme) => ({
-                                '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
-                                    filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
-                                    opacity: 1,
-                                }
-                            })}
-                        />
-
-                        <Accordion elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
-                                    <WarningIcon fontSize="small" />
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                        {t('settings.advanced_settings')}
-                                    </Typography>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Box>
+                                        <Typography variant="subtitle2">{t('settings.batch_translate_merge') || "Merge Batch Translation Requests"}</Typography>
+                                        <Typography variant="body2" color="textSecondary">
+                                            {t('settings.batch_translate_merge_desc') || "Combines multiple papers into a single AI request."}
+                                        </Typography>
+                                    </Box>
+                                    <Switch
+                                        checked={settings.batch_translate_merge || false}
+                                        onChange={(e) => onChange({ ...settings, batch_translate_merge: e.target.checked })}
+                                    />
                                 </Box>
-                            </AccordionSummary>
-                            <AccordionDetails>
+                            </Box>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Box sx={{ opacity: settings.batch_translate_merge ? 1 : 0.4, transition: 'opacity 0.2s', pointerEvents: settings.batch_translate_merge ? 'auto' : 'none' }}>
                                 <TextField
-                                    label={t('settings.custom_headers')}
-                                    value={headers}
-                                    onChange={(e) => setHeaders(e.target.value)}
+                                    label={t('settings.batch_translate_size') || "Merge Batch Size"}
+                                    value={settings.batch_translate_size || 5}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        onChange({ ...settings, batch_translate_size: isNaN(val) ? 5 : val });
+                                    }}
+                                    type="number"
                                     fullWidth
                                     size="small"
-                                    multiline
-                                    rows={3}
-                                    placeholder='{ "X-Custom-Header": "Value" }'
-                                    helperText={t('settings.headers_warning')}
-                                    FormHelperTextProps={{ sx: { color: 'warning.main' } }}
+                                    helperText={t('settings.batch_translate_size_hint') || "How many papers to translate in one API call."}
+                                    sx={(theme) => ({
+                                        '& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button': {
+                                            filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                                            opacity: 1,
+                                        }
+                                    })}
                                 />
-                            </AccordionDetails>
-                        </Accordion>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
-                    <Button onClick={handleSave} variant="contained">{t('common.save')}</Button>
-                </DialogActions>
-            </Dialog>
-
-            <Dialog open={openModelDialog} onClose={() => setOpenModelDialog(false)}>
-                <DialogTitle>{t('settings.add_custom_model')}</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label={t('settings.model_name')}
-                        fullWidth
-                        size="small"
-                        value={newModelName}
-                        onChange={(e) => setNewModelName(e.target.value)}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                handleAddCustomModel();
-                            }
-                        }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenModelDialog(false)}>{t('common.cancel')}</Button>
-                    <Button onClick={handleAddCustomModel} variant="contained">{t('common.add')}</Button>
-                </DialogActions>
-            </Dialog>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
         </Box>
     );
-};
+}
 
-export default AiSettings;

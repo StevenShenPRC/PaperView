@@ -12,19 +12,30 @@ The main `SettingsDialog` has been decoupled structurally using inner routing pa
 出于结构化的考虑将主对话框组件做了进一步分解。采取了内部路由范式以满足在面板内自由切换多样化的配置功能，杜绝了塞满整篇、庞大且不易维护的文件设计。
 
 *   **`components/SettingsDialog.tsx` (Main Dialog Wrapper / 主对话框封装层)**
-    *   Initiates the overarching Modal overlay handling. Renders the left-side vertical category tabs and displays the targeted tab component on the right.
-    *   实现外层模态弹出与拦截。在侧边渲染出分类标签，并在右侧控制相应配置表单页面的热拔插显示。
+    *   Initiates the overarching Modal overlay handling. Renders the top horizontal category tabs and displays the targeted tab component below.
+    *   实现外层模态弹出与拦截。在顶部渲染出分类标签，并在下方控制相应配置表单页面的热拔插显示。
     *   Connects universally via Tauri plugin Store APIs fetching basic persistent profiles via standard `useSettings` logic or `invoke`.
-    *   通过标准的 Tauri Store 后端插件，读取基础通用的持久化个人用户基础信息集（经由内建的 `useSettings` 指令封装或 `invoke` 请求实现）。
+    *   通过标准的 Tauri Store 后端插件，读取基础通用的持久化个人用户基础信息集。
 
-*   **`SettingsDialog/GeneralSettings.tsx`**
-    *   Controls generic cross-cutting behaviors: "Dark/Light mode switch", language, default paper save paths, auto-updates.
-    *   定义并控制通用的交叉型系统规则集：主题明暗方案转换触发；系统偏好语种选择；默认论文索引抓取下传的目录位置；自动化更迭轮询检查等。
+*   ~~**`SettingsDialog/GeneralSettings.tsx`**~~ (Integrated into `SettingsDialog.tsx` / 已整合至主对话框)
+    *   Controls generic cross-cutting behaviors: "Dark/Light mode switch", language, and **Server Port** settings.
+    *   定义并控制通用的交叉型系统规则集：主题明暗方案转换触发；系统偏好语种选择；以及**后端服务端口**配置。
 
-*   **`SettingsDialog/NetworkSettings.tsx`**
-    *   Handles local/global proxy definitions (HTTP/HTTPS, SOCKS5). Vital for accessing specific academic metadata databases outside regional boundaries via Tauri's decoupled Rust connections.
-    *   专用于解决本地亦或是远端全域的代理定义映射功能块（含 HTTP/HTTPS 端口号处理; SOCKS5）。该关键网关是保证程序能通过 Tauri Rust 底层去解耦、进而跨越地缘边界抓取指定学术库数据的必需途径。
+*   **`settings/NetworkSettings.tsx`**
+    *   Handles local/global proxy definitions (HTTP/HTTPS, SOCKS5).
+    *   专用于解决本地亦或是远端全域的代理定义映射功能块。
 
-*   **`SettingsDialog/AISettings.tsx`**
-    *   Key orchestration module managing LLM API credentials. Configures OpenAI / Claude / Ollama backend nodes mapped locally or globally, context thresholds, and generative capabilities per model setup.
-    *   主导 LLM 模型及各类智能API令牌密钥流转与鉴权的核心模块阵列构件。处理适配并映射诸如源于 OpenAI、Claude 或是依托本地运算节点的资源池（如搭载 Ollama 基底的接口通道）及其相关的超分阈值判定参数集和基于所选节点的独特生成向度配置体系群。
+*   **`settings/AiSettings.tsx`**
+    *   Key orchestration module managing LLM API credentials and **Global Model Routing**.
+    *   主导 LLM 模型及各类智能API令牌密钥流转与鉴权的核心模块，包含**全局模型路由**配置。
+    *   Utilizes `ProviderManager` for detail configurations. / 使用 `ProviderManager` 进行详细配置。
+
+*   **`settings/ProviderManager.tsx` (NEW / 新增)**
+    *   Sophisticated management for AI providers and their models. 
+    *   Handles model fetching, **Metadata Matching**, custom capabilities (Vision, Reasoning, etc.), and grouped model lists.
+    *   复杂的 AI 提供商及其模型管理。
+    *   处理模型拉取、**元数据匹配**、自定义能力标注（视觉、推理等）以及分组模型列表展示。
+
+*   **`utils/modelUtils.ts` (Core Metadata Logic / 核心元数据逻辑)**
+    *   Contains fuzzy search, context window formatting, and auto-matching logic for LLM metadata.
+    *   包含 LLM 元数据的模糊搜索、上下文窗口格式化和自动匹配逻辑。

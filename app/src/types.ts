@@ -41,15 +41,34 @@ export interface Batch {
     latest_time: string;
 }
 
+export interface ModelMetadata {
+    id: string;
+    display_name?: string;
+    type: 'chat' | 'embedding' | 'audio' | 'image' | 'rerank' | 'unknown';
+    context_length?: number;
+    multimodal?: boolean; // legacy compat
+    supports_vision?: boolean;
+    supports_audio_input?: boolean;
+    supports_audio_output?: boolean;
+    supports_function_calling?: boolean;
+    supports_reasoning?: boolean;
+    supports_web_search?: boolean;
+    custom?: boolean;
+    raw_info?: Record<string, any>; // Stores matched raw JSON entry for details view
+}
+
 export interface AiProvider {
     name: string;
     base_url: string;
     api_key: string;
-    models: string[];
-    default_model?: string;
-    embedding_model?: string;
-    embedding_dimensions?: number;
+    models: ModelMetadata[];
     additional_headers?: Record<string, string>;
+}
+
+export interface ModelRouting {
+    provider: string;
+    model_id: string;
+    dimensions?: number;
 }
 
 export interface AppSettings {
@@ -57,6 +76,12 @@ export interface AppSettings {
     proxy_url?: string;
     ai_providers: AiProvider[];
     active_ai_provider?: string;
+
+    // Global Routing
+    default_chat_model?: ModelRouting;
+    default_translate_model?: ModelRouting;
+    default_embedding_model?: ModelRouting;
+
     server_port?: number;
     theme_mode: 'light' | 'dark' | 'system';
     translation_target_lang?: string;

@@ -1,5 +1,6 @@
 use tauri::{AppHandle, State, path::BaseDirectory, Manager, Emitter};
-use crate::{db, doi, crawler, ris, AppState, get_proxy_config};
+use crate::{db, doi, crawler, ris, AppState};
+use crate::config::get_proxy_config;
 
 #[tauri::command]
 pub async fn get_batches(app: AppHandle, _state: State<'_, AppState>) -> Result<Vec<db::Batch>, String> {

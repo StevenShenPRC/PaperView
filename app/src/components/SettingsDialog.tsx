@@ -7,7 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useDialog } from '../context/DialogContext';
 import { ThemeMode } from '../context/ThemeContext';
-import { AppSettings } from '../types';
+import { AppSettings, ModelRouting } from '../types';
 import store from '../store';
 import NetworkSettings from './settings/NetworkSettings';
 import AiSettings from './settings/AiSettings';
@@ -84,6 +84,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             const translation_target_lang = await store.get<string>('translation_target_lang') || 'zh';
             const batch_translate_merge = await store.get<boolean>('batch_translate_merge') || false;
             const batch_translate_size = await store.get<number>('batch_translate_size') || 5;
+            const default_chat_model = await store.get<ModelRouting>('default_chat_model') || undefined;
+            const default_translate_model = await store.get<ModelRouting>('default_translate_model') || undefined;
+            const default_embedding_model = await store.get<ModelRouting>('default_embedding_model') || undefined;
             // theme_mode is passed via props for now, but we should sync it
 
             setSettings({
@@ -97,7 +100,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
                 translation_prompt,
                 translation_timeout,
                 batch_translate_merge,
-                batch_translate_size
+                batch_translate_size,
+                default_chat_model,
+                default_translate_model,
+                default_embedding_model
             });
         } catch (e) {
             console.error('Failed to load settings', e);
@@ -122,6 +128,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, mode, on
             await store.set('translation_timeout', settings.translation_timeout);
             await store.set('batch_translate_merge', settings.batch_translate_merge);
             await store.set('batch_translate_size', settings.batch_translate_size);
+
+            // Model routing (decoupled provider-model)
+            if (settings.default_chat_model) await store.set('default_chat_model', settings.default_chat_model);
+            if (settings.default_translate_model) await store.set('default_translate_model', settings.default_translate_model);
+            if (settings.default_embedding_model) await store.set('default_embedding_model', settings.default_embedding_model);
 
             await store.save();
 

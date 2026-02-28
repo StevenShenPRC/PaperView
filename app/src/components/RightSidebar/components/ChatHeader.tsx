@@ -8,6 +8,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ChatSession } from '../../../types';
+import { ChatModelOption } from '../hooks/useChat';
 
 interface ChatHeaderProps {
     collapsed: boolean;
@@ -26,8 +27,8 @@ interface ChatHeaderProps {
     startNewChat: () => void;
     activeProviderName: string | null;
     selectedModel: string;
-    availableModels: string[];
-    updateCurrentSessionModel: (m: string) => void;
+    availableModels: ChatModelOption[];
+    updateCurrentSessionModel: (provider: string, model: string) => void;
     formatDate: (timestamp: number) => string;
 }
 
@@ -35,8 +36,20 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     collapsed, setCollapsed, t, hasCollapsedPdf, onExpandReader,
     historyAnchorEl, setHistoryAnchorEl, sessions, currentSessionId, switchSession, deleteSession,
     showSearch, setShowSearch, startNewChat,
-    activeProviderName, selectedModel, availableModels, updateCurrentSessionModel, formatDate
+    selectedModel, availableModels, updateCurrentSessionModel, formatDate
 }) => {
+    // Group models: chat/unknown from active provider first, then others
+    // Separate typed (chat) from unknown
+    const chatModels = availableModels.filter(o => o.model.type === 'chat');
+    const unknownModels = availableModels.filter(o => o.model.type === 'unknown');
+
+    // Build the composite value: "provider::model_id"
+    const currentValue = selectedModel
+        ? availableModels.find(o => o.model.id === selectedModel)
+            ? `${availableModels.find(o => o.model.id === selectedModel)!.provider}::${selectedModel}`
+            : selectedModel
+        : '';
+
     return (
         <Box sx={{ flexShrink: 0 }}>
             <Box sx={{ display: 'flex', justifyContent: collapsed ? 'center' : 'space-between', alignItems: 'center', mb: 1 }}>
@@ -124,23 +137,58 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                         </List>
                     </Popover>
 
-                    {activeProviderName && (
+                    {availableModels.length > 0 && (
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
                             <Typography variant="body2" sx={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
                                 {t('settings.models') || "Model"}:
                             </Typography>
                             <FormControl fullWidth size="small">
                                 <Select
-                                    value={selectedModel || ''}
-                                    onChange={(e) => updateCurrentSessionModel(e.target.value)}
+                                    value={currentValue}
+                                    onChange={(e) => {
+                                        const val = e.target.value as string;
+                                        if (!val) return;
+                                        const sep = val.indexOf('::');
+                                        if (sep > 0) {
+                                            updateCurrentSessionModel(val.slice(0, sep), val.slice(sep + 2));
+                                        }
+                                    }}
                                     displayEmpty
-                                    renderValue={(selected) => selected ? selected : <em>{t('app.select_model') || "Select Model"}</em>}
+                                    renderValue={(selected) => {
+                                        if (!selected) return <em>{t('app.select_model') || "Select Model"}</em>;
+                                        // Show just the model name in the compact view
+                                        const sep = (selected as string).indexOf('::');
+                                        if (sep > 0) {
+                                            const prov = (selected as string).slice(0, sep);
+                                            const mid = (selected as string).slice(sep + 2);
+                                            const opt = availableModels.find(o => o.provider === prov && o.model.id === mid);
+                                            return opt?.model.display_name || mid;
+                                        }
+                                        return selected;
+                                    }}
                                 >
                                     <MenuItem disabled value="">
                                         <em>{t('app.select_model') || "Select Model"}</em>
                                     </MenuItem>
-                                    {availableModels.map((m) => (
-                                        <MenuItem key={m} value={m}>{m}</MenuItem>
+                                    {chatModels.map((o) => (
+                                        <MenuItem key={`${o.provider}::${o.model.id}`} value={`${o.provider}::${o.model.id}`}>
+                                            <Typography variant="body2" noWrap>
+                                                {o.provider} — {o.model.display_name || o.model.id}
+                                            </Typography>
+                                        </MenuItem>
+                                    ))}
+                                    {unknownModels.length > 0 && chatModels.length > 0 && <Divider sx={{ my: 0.5 }} />}
+                                    {unknownModels.length > 0 && (
+                                        <MenuItem disabled sx={{ fontSize: '0.75rem', py: 0.5 }}>
+                                            — {t('settings.unclassified_models') || 'Unclassified'} —
+                                        </MenuItem>
+                                    )}
+                                    {unknownModels.map((o) => (
+                                        <MenuItem key={`${o.provider}::${o.model.id}`} value={`${o.provider}::${o.model.id}`}>
+                                            <Typography variant="body2" noWrap>
+                                                {o.provider} — {o.model.display_name || o.model.id}
+                                            </Typography>
+                                        </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>

@@ -25,9 +25,13 @@ The `PaperList/` component defines the middle column table view for managing ref
     *   Integrates the "Drag Source" allowing users to grab the row and append to the local AI or sidebar groups.
     *   集成“拖曳源（Drag Source）”使得用户能够抓取行本身，并将它挂载转移到底部的本地 AI 聊天界面或侧边栏自定义分组中。
 
-*   **`components/ExportDialog.tsx`**
-    *   Triggered from batch selecting entries, offering raw `BibTeX` or `.ris` standard exports formatting blocks. Provides one-click clipboard saving or `.txt`/`.ris` file output configurations.
-    *   在批量选中列表条目时触发调用，提供对原始 `BibTeX` 或 `.ris` 常见标准格式导出块的浏览和整理。具备一键式的剪贴板转移或是 `.txt`/`.ris` 的本地文件导出生成配置选项。
+*   **`PaperList/BatchActionToolbar.tsx` (NEW / 新增)**
+    *   Handles batch actions like translation, metadata fetching, and export triggers.
+    *   处理批量操作，如翻译、元数据抓取和导出触发。
+
+*   ~~**`components/ExportDialog.tsx`**~~ (Now triggered via batch actions / 现通过批量操作触发)
+    *   Offers raw `BibTeX` or `.ris` standard exports formatting blocks. Provides one-click clipboard saving or `.txt`/`.ris` file output configurations.
+    *   提供对原始 `BibTeX` 或 `.ris` 常见标准格式导出块的浏览和整理。具备一键式的剪贴板转移或是 `.txt`/`.ris` 的本地文件导出生成配置选项。
 
 ## Hooks / 业务逻辑钩子
 

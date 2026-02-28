@@ -1,5 +1,5 @@
 use tauri::{AppHandle, State, path::BaseDirectory, Manager, Emitter};
-use crate::{db, ai, AppState, get_ai_config, get_proxy_config};
+use crate::{db, ai, AppState};
 
 #[tauri::command]
 pub async fn translate_paper(app: AppHandle, _state: State<'_, AppState>, id: i64) -> Result<db::Paper, String> {
@@ -12,10 +12,16 @@ pub async fn translate_paper(app: AppHandle, _state: State<'_, AppState>, id: i6
     }).await.unwrap()?;
 
     // 2. Get AI Config & Proxy
-    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let (proxy_mode, proxy_url) = crate::config::get_proxy_config(&app);
     println!("translate_paper: Proxy config: mode={}, url={:?}", proxy_mode, proxy_url);
     
-    let (base_url, api_key, provider_name, headers, default_model, _, _, user_prompt, target_lang, custom_timeout, _, _) = get_ai_config(&app)?;
+    let (resolved_cfg, user_prompt, target_lang, custom_timeout, _, _) = crate::config::get_translate_config(&app)?;
+    let base_url = resolved_cfg.base_url;
+    let api_key = resolved_cfg.api_key;
+    let provider_name = resolved_cfg.provider_name;
+    let headers = resolved_cfg.headers;
+    let default_model = resolved_cfg.model;
+    
     println!("translate_paper: AI Config: provider={}, base_url={}, model={}", provider_name, base_url, default_model);
 
     // Use default model if available, otherwise fallback
@@ -105,7 +111,12 @@ pub async fn translate_batch(app: AppHandle, state: State<'_, AppState>, ids: Ve
         return Ok(vec![]);
     }
 
-    let (base_url, api_key, provider_name, headers, default_model, _, _, user_prompt, target_lang, custom_timeout, merge, batch_size) = get_ai_config(&app)?;
+    let (resolved_cfg, user_prompt, target_lang, custom_timeout, merge, batch_size) = crate::config::get_translate_config(&app)?;
+    let base_url = resolved_cfg.base_url.clone();
+    let api_key = resolved_cfg.api_key.clone();
+    let provider_name = resolved_cfg.provider_name;
+    let headers = resolved_cfg.headers.clone();
+    let default_model = resolved_cfg.model;
     
     // If merge is false, just run them individually and wait.
     if !merge {
@@ -119,7 +130,7 @@ pub async fn translate_batch(app: AppHandle, state: State<'_, AppState>, ids: Ve
     }
 
     // --- Merge Mode ---
-    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let (proxy_mode, proxy_url) = crate::config::get_proxy_config(&app);
     println!("translate_batch (merge): AI Config: provider={}, model={}, batch_size={}", provider_name, default_model, batch_size);
 
     let model = if !default_model.is_empty() { default_model } else { "gpt-3.5-turbo".to_string() };
@@ -240,7 +251,7 @@ pub async fn chat_command(
 ) -> Result<(), String> {
     println!("chat_command called using provider: {}, model: {}", provider_name, model);
     // Get Config
-    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let (proxy_mode, proxy_url) = crate::config::get_proxy_config(&app);
     
     // Get Provider Config by name
     use tauri_plugin_store::StoreExt;
@@ -291,7 +302,7 @@ pub async fn generate_chat_title_command(
 ) -> Result<String, String> {
     println!("generate_chat_title_command called using provider: {}, model: {}", provider_name, model);
     // Get Config
-    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let (proxy_mode, proxy_url) = crate::config::get_proxy_config(&app);
     
     // Get Provider Config by name
     use tauri_plugin_store::StoreExt;
@@ -340,6 +351,34 @@ pub async fn fetch_models_command(
     api_key: String,
     additional_headers: Option<std::collections::HashMap<String, String>>
 ) -> Result<Vec<String>, String> {
-    let (proxy_mode, proxy_url) = get_proxy_config(&app);
+    let (proxy_mode, proxy_url) = crate::config::get_proxy_config(&app);
     ai::fetch_models(base_url, api_key, proxy_mode, proxy_url, additional_headers, Some(15)).await
+}
+
+#[tauri::command]
+pub async fn get_model_database(app: AppHandle) -> Result<serde_json::Value, String> {
+    // Try Resource directory first (production build)
+    let resource_path = app.path().resource_dir()
+        .map(|d| d.join("assets/model_prices_and_context_window.json"))
+        .unwrap_or_default();
+
+    let path = if resource_path.exists() {
+        resource_path
+    } else {
+        // Fallback for development: file is in src-tauri/assets/
+        let dev_path = std::env::current_dir()
+            .map(|d| d.join("assets/model_prices_and_context_window.json"))
+            .unwrap_or_default();
+        dev_path
+    };
+
+    if path.exists() {
+        let content = tokio::fs::read_to_string(&path).await.map_err(|e| format!("Failed to read model db at {:?}: {}", path, e))?;
+        let json: serde_json::Value = serde_json::from_str(&content).map_err(|e| format!("Failed to parse model db: {}", e))?;
+        Ok(json)
+    } else {
+        // Return empty if file not found
+        eprintln!("Model database not found at {:?}", path);
+        Ok(serde_json::json!({}))
+    }
 }
