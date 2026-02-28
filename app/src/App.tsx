@@ -8,6 +8,7 @@ import RightSidebar from './components/RightSidebar';
 import SettingsDialog from './components/SettingsDialog';
 import PaperList from './components/PaperList';
 import PDFReader from './components/PDFReader';
+import Updater from './components/Updater';
 import { PendingContext } from './types';
 import { useTranslation } from 'react-i18next';
 
@@ -154,6 +155,7 @@ function App() {
 
   return (
     <>
+      <Updater />
       <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
         <Sidebar
           batches={batches}
