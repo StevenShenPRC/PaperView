@@ -23,6 +23,9 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Enable git symlinks
+        run: git config --global core.symlinks true
+
       - uses: actions/checkout@v4
 
       - name: setup node
@@ -64,6 +67,9 @@ jobs:
     needs: release
     runs-on: windows-latest
     steps:
+      - name: Enable git symlinks
+        run: git config --global core.symlinks true
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
